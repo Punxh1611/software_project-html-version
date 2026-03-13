@@ -1,0 +1,21 @@
+body {
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.van-text {
+    color: #355872;
+    font-family: "Bacasime Antique";
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
