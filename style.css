@@ -262,3 +262,37 @@ body {
 }
 
 .back-link:hover { color: var(--blue-dark); }
+/* password-toggle.css
+   เพิ่ม @import หรือ <link> ไฟล์นี้ในทุกหน้าที่ใช้ลูกตา */
+
+.field {
+    position: relative;
+}
+
+.field--password {
+    position: relative;
+}
+
+.field--password input {
+    padding-right: 44px; /* เว้นที่ให้ปุ่มลูกตา */
+}
+
+.btn-eye {
+    position: absolute;
+    right: 12px;
+    bottom: 13px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #b0c4d8;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    line-height: 0;
+}
+
+.btn-eye:hover {
+    color: #2E86C1;
+}
