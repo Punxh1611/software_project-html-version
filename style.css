@@ -202,18 +202,16 @@ body {
 @media (max-width: 500px) {
     .banner { padding: 32px 20px 48px; }
 
-    .wrapper { padding: 0; }
+    .wrapper { padding: 0 16px; }
 
     .card {
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin-top: 0;
-        box-shadow: none;
+        border-radius: var(--radius);
+        margin-top: -20px;
+        box-shadow: 0 8px 40px rgba(27, 79, 114, 0.12);
         padding: 28px 20px;
     }
 
-    .register-row { padding: 0 20px; }
+    .register-row { padding: 0 4px; }
 }
 
 /* ── Illustration ── */
