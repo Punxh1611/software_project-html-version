@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { toast } from "./Toast.js";
 
 // ใช้ Config ชุดเดิมของคุณ
 const firebaseConfig = {
@@ -25,17 +26,17 @@ document.getElementById("btn-register")?.addEventListener("click", async () => {
 
     // 1. Validation เบื้องต้น
     if (!username || !email || !password) {
-        alert("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+        toast("กรุณากรอกข้อมูลให้ครบทุกช่อง");
         return;
     }
 
     if (password !== confirmPassword) {
-        alert("รหัสผ่านไม่ตรงกัน");
+        toast("รหัสผ่านไม่ตรงกัน");
         return;
     }
 
     if (password.length < 6) {
-        alert("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+        toast("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
         return;
     }
 
@@ -54,23 +55,23 @@ document.getElementById("btn-register")?.addEventListener("click", async () => {
             createdAt: new Date().toISOString()
         });
 
-        alert("สมัครสมาชิกสำเร็จ!");
+        toast("สมัครสมาชิกสำเร็จ!");
         window.location.href = "login.html"; // สมัครเสร็จแล้วส่งไปหน้า Login
 
     } catch (error) {
         console.error("Register error:", error.code);
         switch (error.code) {
             case "auth/email-already-in-use":
-                alert("Email นี้ถูกใช้งานไปแล้ว");
+                toast("Email นี้ถูกใช้งานไปแล้ว");
                 break;
             case "auth/invalid-email":
-                alert("รูปแบบ Email ไม่ถูกต้อง");
+                toast("รูปแบบ Email ไม่ถูกต้อง");
                 break;
             case "auth/weak-password":
-                alert("รหัสผ่านคาดเดาง่ายเกินไป");
+                toast("รหัสผ่านคาดเดาง่ายเกินไป");
                 break;
             default:
-                alert("เกิดข้อผิดพลาด: " + error.message);
+                toast("เกิดข้อผิดพลาด: " + error.message);
         }
     }
     
