@@ -67,7 +67,7 @@ function renderLoggedIn(user, username, photoURL) {
     <span class="navbar__username" style="margin-left: 10px;">${username}</span>
     <div class="navbar__avatar navbar__avatar--clickable" id="avatar-btn" style="margin: 0 10px;">
       ${avatarHTML}
-      <div class="navbar__avatar-overlay">📸</div>
+      <div class="navbar__avatar-overlay"></div>
     </div>
     <button class="navbar__logout-btn" id="btn-logout">Logout</button>
     <input type="file" id="avatar-upload" accept="image/*" style="display:none">

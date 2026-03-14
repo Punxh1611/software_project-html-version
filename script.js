@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { toast } from "./Toast.js";
 
 // Firebase Config (ใช้ชุดเดิมของคุณ)
 const firebaseConfig = {
@@ -23,7 +24,7 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
     const password = document.getElementById("password").value;
 
     if (!userInput || !password) {
-        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        toast("กรุณากรอกข้อมูลให้ครบถ้วน");
         return;
     }
 
@@ -38,7 +39,7 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                alert("ไม่พบ Username นี้ในระบบ");
+                toast("ไม่พบ Username นี้ในระบบ");
                 return;
             }
 
@@ -57,7 +58,7 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
         // เก็บข้อมูลเบื้องต้นลง SessionStorage (ถ้าต้องการนำไปใช้หน้าอื่น)
         sessionStorage.setItem("userUID", user.uid);
         
-        alert("เข้าสู่ระบบสำเร็จ!");
+        toast("เข้าสู่ระบบสำเร็จ!");
         window.location.href = "index.html"; // ไปยังหน้าหลัก
 
     } catch (error) {
@@ -66,13 +67,13 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
             case "auth/invalid-credential":
             case "auth/wrong-password":
             case "auth/user-not-found":
-                alert("Username/Email หรือ รหัสผ่านไม่ถูกต้อง");
+                toast("Username/Email หรือ รหัสผ่านไม่ถูกต้อง");
                 break;
             case "auth/too-many-requests":
-                alert("ระงับการเข้าสู่ระบบชั่วคราวเนื่องจากลองผิดหลายครั้ง");
+                toast("ระงับการเข้าสู่ระบบชั่วคราวเนื่องจากลองผิดหลายครั้ง");
                 break;
             default:
-                alert("เกิดข้อผิดพลาด: " + error.message);
+                toast("เกิดข้อผิดพลาด: " + error.message);
         }
     }
 });
@@ -92,3 +93,4 @@ function eyeOffIcon() {
     </svg>`;
 }
 initPasswordToggles();
+// ฟังก์ชันส่งลิงก์รีเซ็ตไปที่ Python API
