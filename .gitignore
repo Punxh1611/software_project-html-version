@@ -1,0 +1,3 @@
+api/serviceAccountKey.json
+node_modules/
+.envgit rm --cached api/serviceAccountKey.json
