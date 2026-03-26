@@ -3,7 +3,6 @@ import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/fir
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast } from "./Toast.js";
 
-// Firebase Config (ใช้ชุดเดิมของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
   authDomain: "vanvan-90cd0.firebaseapp.com",
@@ -30,8 +29,6 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
 
     try {
         let emailToAuth = userInput;
-
-        // ตรวจสอบว่าสิ่งที่กรอกมาเป็น Username หรือไม่ (ถ้าไม่มี @ ให้สันนิษฐานว่าเป็น Username)
         if (!userInput.includes("@")) {
             // ค้นหา Email จาก Firestore โดยใช้ Username
             const userRef = collection(db, "user");

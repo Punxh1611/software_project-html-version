@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VanGo Admin - Mochit Connect</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-box">V</div>
+        <h1 class="logo-text">VanGo Admin</h1>
+      </div>
+      
+      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+      
+      <div class="sidebar-footer">
+        <button class="btn-logout">
+          <i data-lucide="log-out"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
+    <main class="main-content">
+      <header class="top-header">
+        <div class="mobile-menu-btn">
+          <button id="mobile-toggle"><i data-lucide="menu"></i></button>
+          <div class="logo-box mobile-logo">V</div>
+        </div>
+        <h2 id="page-title" class="page-title">Dashboard</h2>
+        <div class="user-profile">
+          <div class="user-info">
+            <p class="user-name">Admin User</p>
+            <p class="user-role">System Administrator</p>
+          </div>
+          <div class="user-avatar">AD</div>
+        </div>
+      </header>
+
+      <div id="content-area" class="content-area">
+        </div>
+    </main>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
