@@ -11,7 +11,7 @@
         href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
-    <script src="main.js" type="module"></script>
+    <script src="./main.js" type="module"></script>
 </head>
 
 <body>
@@ -49,13 +49,13 @@
                 <path d="M3 6h18M3 12h18M3 18h18" stroke="white" stroke-width="2.2" stroke-linecap="round" />
             </svg>
         </button>
-        <div class="navbar__mobile-search">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="7" cy="7" r="4.5" stroke="#757575" stroke-width="1.4" />
-                <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="#757575" stroke-width="1.4" stroke-linecap="round" />
+        <span class="navbar__mobile-title">VANVAN</span>
+        <button class="navbar__mobile-search-btn" id="mobile-search-btn" aria-label="ค้นหา">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7" stroke="white" stroke-width="2.2"/>
+                <path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
-            <span class="navbar__mobile-search-text">ค้นหารอบรถ</span>
-        </div>
+        </button>
 
         <!-- Desktop left: logo -->
         <div class="navbar__left">
@@ -262,6 +262,7 @@
                     </div>
                 </div>
             </section>
+        </section><!-- /.section-card -->
     </main>
 
 </body>

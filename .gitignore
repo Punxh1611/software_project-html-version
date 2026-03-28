@@ -1,8 +1,5 @@
 api/serviceAccountKey.json
 node_modules/
-<<<<<<< Updated upstream
-.envgit rm --cached api/serviceAccountKey.json
-=======
 .env
 git rm --cached api/serviceAccountKey.json
->>>>>>> Stashed changes
+admin/script.js
