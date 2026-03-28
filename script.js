@@ -1,101 +1,151 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { toast } from "./toast.js";
+// script.js — Login page (PostgreSQL version)
+import { toast } from "./Toast.js";
 
- const firebaseConfig = {
-    apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
-    authDomain: "vanvan-90cd0.firebaseapp.com",
-    projectId: "vanvan-90cd0",
-    storageBucket: "vanvan-90cd0.firebasestorage.app",
-    messagingSenderId: "234295405835",
-    appId: "1:234295405835:web:b5c3e7842f979af686460e",
-    measurementId: "G-S3MF2CYXZ2"
-  };
+const API = "http://localhost:3000/api";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// ═══════════════════════════════════════════
+// FIELD VALIDATION UI
+// ═══════════════════════════════════════════
 
-// ฟังก์ชัน Login
-document.querySelector(".btn-signin")?.addEventListener("click", async () => {
-    const userInput = document.getElementById("username").value.trim(); // รับค่าได้ทั้ง Username หรือ Email
+function setError(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add("input--error");
+    el.classList.remove("input--success");
+    el.parentElement.querySelector(".field-error-msg")?.remove();
+    const span = document.createElement("span");
+    span.className   = "field-error-msg";
+    span.textContent = msg;
+    el.parentElement.appendChild(span);
+}
+
+function clearField(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("input--error", "input--success");
+    el.parentElement.querySelector(".field-error-msg")?.remove();
+}
+
+function validate() {
+    ["username", "password"].forEach(clearField);
+    const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
+    let ok = true;
 
-    if (!userInput || !password) {
-        toast("กรุณากรอกข้อมูลให้ครบถ้วน");
+    if (!username) {
+        setError("username", "⚠ กรุณากรอก Username หรือ Email");
+        ok = false;
+    } else if (username.length < 3) {
+        setError("username", "⚠ ต้องมีอย่างน้อย 3 ตัวอักษร");
+        ok = false;
+    }
+
+    if (!password) {
+        setError("password", "⚠ กรุณากรอกรหัสผ่าน");
+        ok = false;
+    } else if (password.length < 6) {
+        setError("password", "⚠ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+        ok = false;
+    }
+
+    return ok;
+}
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+
+async function doLogin() {
+    if (!validate()) {
+        toast("กรุณากรอกข้อมูลให้ครบและถูกต้อง", "warning");
         return;
     }
 
-    try {
-    let emailToAuth = userInput;
-    if (!userInput.includes("@")) {
-        // ค้นหา Email จาก Firestore โดยใช้ Username
-        const userRef = collection(db, "user");
-        const q = query(userRef, where("username", "==", userInput));
-        const querySnapshot = await getDocs(q);
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const btn      = document.getElementById("btn-login");
 
-        if (querySnapshot.empty) {
-            toast("ไม่พบ Username นี้ในระบบ");
+    btn.disabled    = true;
+    btn.textContent = "กำลังเข้าสู่ระบบ...";
+
+    try {
+        const res  = await fetch(`${API}/auth/login`, {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            if (data.message.includes("รหัสผ่าน")) {
+                setError("password", "⚠ " + data.message);
+            } else {
+                setError("username", "⚠ " + data.message);
+            }
+            toast(data.message, "error");
             return;
         }
 
-        // ดึง Email ของ User คนนั้นมาเพื่อใช้ Login
-        querySnapshot.forEach((doc) => {
-            emailToAuth = doc.data().email;
+        // บันทึก token และ user
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user",  JSON.stringify(data.user));
+
+        toast("เข้าสู่ระบบสำเร็จ! 🎉", "success");
+        setTimeout(() => {
+            window.location.href = data.user.role === "admin"
+                ? "admin/index.html"
+                : "index.html";
+        }, 900);
+
+    } catch (err) {
+        console.error("Login error:", err);
+        toast("ไม่สามารถเชื่อมต่อ Server ได้ กรุณาตรวจสอบว่า Backend รันอยู่", "error");
+    } finally {
+        btn.disabled    = false;
+        btn.textContent = "Sign In";
+    }
+}
+
+// ═══════════════════════════════════════════
+// PASSWORD TOGGLE
+// ═══════════════════════════════════════════
+
+const EYE_ON  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+function initToggles() {
+    document.querySelectorAll(".btn-eye[data-toggle]").forEach(btn => {
+        const input = document.getElementById(btn.dataset.toggle);
+        if (!input) return;
+        btn.innerHTML = EYE_ON;
+        btn.addEventListener("click", () => {
+            const show    = input.type === "password";
+            input.type    = show ? "text" : "password";
+            btn.innerHTML = show ? EYE_OFF : EYE_ON;
+            input.focus();
         });
-    }
+    });
+}
 
-    // --- Login ด้วย Firebase Auth ---
-    const userCredential = await signInWithEmailAndPassword(auth, emailToAuth, password);
-    const uid = userCredential.user.uid;
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
 
-    // --- Check Role จาก Firestore ---
-    const userDocRef = doc(db, "user", uid);
-    const userDoc = await getDoc(userDocRef);
+document.addEventListener("DOMContentLoaded", () => {
+    initToggles();
 
-    if (userDoc.exists()) {
-        const role = userDoc.data().role;
+    document.getElementById("btn-login")
+        ?.addEventListener("click", doLogin);
 
-        if (role === "admin") {
-            window.location.href = "/admin/index.html";
-        } else {
-            window.location.href = "/index.html";
-        }
-    } else {
-        toast("ไม่พบข้อมูลผู้ใช้");
-    }
+    document.getElementById("username")
+        ?.addEventListener("input", () => clearField("username"));
+    document.getElementById("password")
+        ?.addEventListener("input", () => clearField("password"));
 
-    } catch (error) {
-        console.error("Login Error:", error.code);
-        switch (error.code) {
-            case "auth/invalid-credential":
-            case "auth/wrong-password":
-            case "auth/user-not-found":
-                toast("Username/Email หรือ รหัสผ่านไม่ถูกต้อง");
-                break;
-            case "auth/too-many-requests":
-                toast("ระงับการเข้าสู่ระบบชั่วคราวเนื่องจากลองผิดหลายครั้ง");
-                break;
-            default:
-                toast("เกิดข้อผิดพลาด: " + error.message);
-        }
-    }
+    ["username", "password"].forEach(id => {
+        document.getElementById(id)
+            ?.addEventListener("keydown", e => {
+                if (e.key === "Enter") doLogin();
+            });
+    });
 });
-// เรียกใช้ลูกตาตอนหน้าโหลด
-function eyeIcon() {
-    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-        <circle cx="12" cy="12" r="3"/>
-    </svg>`;
-}
-
-function eyeOffIcon() {
-    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-        <line x1="1" y1="1" x2="23" y2="23"/>
-    </svg>`;
-}
-initPasswordToggles();
-// ฟังก์ชันส่งลิงก์รีเซ็ตไปที่ Python API
