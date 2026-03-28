@@ -11,19 +11,17 @@
         href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
-    <script src="main.js" type="module"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/themes/airbnb.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/th.min.js"></script>
+    <script src="main.js?v=3" type="module"></script>
 </head>
 
 <body>
 
     <!-- Drawer Overlay -->
-    <div class="drawer-overlay" id="drawer-overlay">
-        <div class="drawer__avatar" id="avatar-container" style="cursor: pointer;">
-            <img id="user-photo" src="default-avatar.png" alt="User Photo">
-        </div>
-        <input type="file" id="photo-input" accept="image/*" style="display: none;">
-        <button id="btn-change-photo">เปลี่ยนรูปโปรไฟล์</button>
-    </div>
+    <div class="drawer-overlay" id="drawer-overlay"></div>
 
     <!-- Mobile Drawer -->
     <nav class="nav-drawer" id="nav-drawer">
@@ -36,14 +34,13 @@
             </button>
         </div>
         <div class="drawer__body">
-            <!-- inject by navbar.js -->
             <div id="nav-drawer-links"></div>
         </div>
     </nav>
 
     <!-- Navbar -->
     <header class="navbar">
-        <!-- Mobile: hamburger + search -->
+        <!-- Mobile only: hamburger + search -->
         <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M3 6h18M3 12h18M3 18h18" stroke="white" stroke-width="2.2" stroke-linecap="round" />
@@ -56,15 +53,13 @@
             </svg>
             <span class="navbar__mobile-search-text">ค้นหารอบรถ</span>
         </div>
-
-        <!-- Desktop left: logo -->
         <div class="navbar__left">
             <div class="logo">
                 <span class="van-text">VANVAN</span>
             </div>
         </div>
 
-        <!-- Desktop right: inject by navbar.js -->
+        <!-- Desktop right: inject by main.js -->
         <nav class="navbar__actions" id="nav-actions-desktop"></nav>
     </header>
 
@@ -73,79 +68,82 @@
         <div class="hero__overlay"></div>
         <div class="hero__search-box">
             <div class="hero__search-row">
-                <!-- จาก -->
-                <div class="hero__field">
-                    <span class="hero__field-label">จาก</span>
+                <div class="hero__field" style="cursor: default;">
+                    <span class="hero__field-label">จุดขึ้นรถ</span>
                     <div class="hero__field-input">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor"
-                                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="hero__field-content">
-                            <span class="hero__field-city">กรุงเทพ</span>
-                            <span class="hero__field-code">(BKKA)</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        
+                        <input type="text" id="search-origin" class="hero__field-select" 
+                               value="หมอชิต 2" readonly 
+                               style="background-image: none; padding-right: 0; cursor: default; color: var(--color-black); font-weight: 600;">
+                    </div>
+                </div>
+
+                <!-- Custom Dropdown: อาคาร (สายรถ) -->
+                <div class="hero__field" id="terminal-dropdown-wrapper">
+                    <span class="hero__field-label">อาคาร (สายรถ)</span>
+                    <div class="hero__field-input">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+                        
+                        <input type="text" id="search-terminal" class="hero__field-select custom-dropdown-trigger" 
+                               placeholder="ระบุอาคาร..." readonly>
+                    </div>
+                    <div class="custom-dropdown" id="terminal-dropdown">
+                        <div class="custom-dropdown__option" data-value="A">
+                            <span class="custom-dropdown__icon">🏢</span>
+                            <div class="custom-dropdown__text">
+                                <span class="custom-dropdown__label">อาคาร A</span>
+                                <span class="custom-dropdown__desc">เหนือ / อีสาน</span>
+                            </div>
+                        </div>
+                        <div class="custom-dropdown__option" data-value="B">
+                            <span class="custom-dropdown__icon">🏬</span>
+                            <div class="custom-dropdown__text">
+                                <span class="custom-dropdown__label">อาคาร B</span>
+                                <span class="custom-dropdown__desc">กลาง</span>
+                            </div>
+                        </div>
+                        <div class="custom-dropdown__option" data-value="C">
+                            <span class="custom-dropdown__icon">🏗️</span>
+                            <div class="custom-dropdown__text">
+                                <span class="custom-dropdown__label">อาคาร C</span>
+                                <span class="custom-dropdown__desc">ตะวันออก</span>
+                            </div>
+                        </div>
+                        <div class="custom-dropdown__option" data-value="D">
+                            <span class="custom-dropdown__icon">🏛️</span>
+                            <div class="custom-dropdown__text">
+                                <span class="custom-dropdown__label">อาคาร D</span>
+                                <span class="custom-dropdown__desc">ใต้ / ตะวันตก</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Swap -->
-                <button class="hero__swap-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </button>
-
-                <!-- ถึง -->
-                <div class="hero__field">
-                    <span class="hero__field-label">ถึง</span>
+                <!-- Custom Dropdown: ถึง (จุดลงรถ) -->
+                <div class="hero__field" id="dest-dropdown-wrapper">
+                    <span class="hero__field-label">ถึง (จุดลงรถ)</span>
                     <div class="hero__field-input">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor"
-                                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="hero__field-content">
-                            <span class="hero__field-city">ไทเป</span>
-                            <span class="hero__field-code">(TPE)</span>
-                        </div>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8520A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        
+                        <input type="text" id="search-dest" class="hero__field-select custom-dropdown-trigger" 
+                               placeholder="รอเลือกอาคาร..." readonly disabled>
+                    </div>
+                    <div class="custom-dropdown" id="dest-dropdown">
+                        <!-- populated dynamically -->
                     </div>
                 </div>
 
-                <!-- วันออกเดินทาง -->
                 <div class="hero__field">
                     <span class="hero__field-label">วันออกเดินทาง</span>
                     <div class="hero__field-input">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8" />
-                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" />
-                        </svg>
-                        <span class="hero__field-city">15 มี.ค. 2026</span>
+                        <input type="text" id="search-date" class="hero__field-select" placeholder="เลือกวันที่" style="padding-left:0; background:transparent;">
                     </div>
                 </div>
 
-                <!-- โป-กลับ -->
-                <div class="hero__field">
-                    <div class="hero__roundtrip-label">
-                        <input type="checkbox" id="roundtrip" class="hero__checkbox">
-                        <label for="roundtrip" class="hero__field-label">โป-กลับ</label>
-                    </div>
-                    <div class="hero__field-input hero__field-input--muted">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8" />
-                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" />
-                        </svg>
-                        <span class="hero__field-city hero__field-city--muted">17 มี.ค. 2026</span>
-                    </div>
-                </div>
-
-                <!-- Search button -->
-                <button class="hero__search-btn">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <circle cx="11" cy="11" r="7" stroke="white" stroke-width="2.2" />
-                        <path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round" />
-                    </svg>
+                <button id="btn-search" class="hero__search-btn">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="white" stroke-width="2.2" /><path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round" /></svg>
+                    <span class="hero__search-btn-text">ค้นหา</span>
                 </button>
             </div>
         </div>
@@ -153,117 +151,91 @@
 
     <!-- Main Content -->
     <main class="main">
-        <section class="section-card">
-            <div class="section-card__header">
-                <h2 class="section-card__title">Most pickup</h2>
-                <p class="section-card__subtitle">คนจองมากที่สุด</p>
+        
+        <section class="promo-banner">
+            <div class="promo-banner__content">
+                <h2>🎉 เส้นทางใหม่! หมอชิต 2 - พิษณุโลก</h2>
+                <p>เปิดให้บริการแล้ววันนี้ จองล่วงหน้าได้ 7 วัน การันตีที่นั่งแน่นอน</p>
+            </div>
+            <div class="promo-banner__btn">
+                <button onclick="document.getElementById('search-dest').focus()">จองเลย</button>
+            </div>
+        </section>
+
+        <section class="quick-routes">
+            <h3 class="quick-routes__title">📍 ปลายทางยอดฮิต <span class="quick-routes__badge">วันนี้</span></h3>
+            <div class="quick-routes__chips" id="quick-routes-chips">
+                <p style="color:#757575; font-size:14px;">กำลังโหลดข้อมูล...</p>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="step-item">
+                <div class="step-icon">🔍</div>
+                <h4>1. ค้นหาเส้นทาง</h4>
+                <p>เลือกจุดขึ้น-ลงรถ และวันเดินทาง</p>
+            </div>
+            <div class="step-item">
+                <div class="step-icon">💺</div>
+                <h4>2. เลือกรอบและจุดจอด</h4>
+                <p>ระบุจุดลงรถเพื่อคำนวณราคาที่คุ้มค่า</p>
+            </div>
+            <div class="step-item">
+                <div class="step-icon">🎟️</div>
+                <h4>3. ยืนยันการจอง</h4>
+                <p>ชำระเงินและรอขึ้นรถได้เลย!</p>
+            </div>
+        </section>
+
+        <section class="service-highlights">
+            <div class="highlight-item">
+                <span>⏱️</span> ออกตรงเวลา
+            </div>
+            <div class="highlight-item">
+                <span>🛋️</span> เบาะกว้างนั่งสบาย
+            </div>
+            <div class="highlight-item">
+                <span>📱</span> จองล่วงหน้าง่ายๆ
+            </div>
+            <div class="highlight-item">
+                <span>🔒</span> ปลอดภัยทุกเส้นทาง
+            </div>
+        </section>
+        <section class="upcoming-section">
+            <div class="upcoming-section__header">
+                <h2 class="upcoming-section__title" id="main-list-title">🚐 รอบที่ใกล้ออก</h2>
+                <p class="upcoming-section__subtitle" id="main-list-subtitle">รอบเดินทางของวันนี้ที่เปิดให้จอง</p>
             </div>
 
-            <div class="trip-grid">
-                <!-- Card 1 — with real image + booking -->
-                <div class="trip-card trip-card--featured">
-                    <div class="trip-card__img-wrapper">
-                        <img src="https://placehold.co/277x169/4A90D9/white?text=พัทยา" alt="พัทยา"
-                            class="trip-card__img">
-                        <span class="trip-card__countdown">ใกล้ออก 15 นาที</span>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">พัทยา</h3>
-                        <p class="trip-card__time">รอบเดินทาง : 17:00</p>
-                        <button class="trip-card__btn">จอง</button>
-                    </div>
+            <div class="trip-grid" id="trip-grid">
                 </div>
 
-                <!-- Card 2 -->
-                <div class="trip-card">
-                    <div class="trip-card__img-placeholder">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                            <rect x="4" y="4" width="32" height="32" rx="4" stroke="#C0C0C0" stroke-width="2"
-                                fill="none" />
-                            <circle cx="14" cy="15" r="3" stroke="#C0C0C0" stroke-width="1.5" fill="none" />
-                            <path d="M4 28l9-8 7 6 5-4 11 10" stroke="#C0C0C0" stroke-width="1.5" stroke-linecap="round"
-                                fill="none" />
-                        </svg>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">Title</h3>
-                        <p class="trip-card__desc">Body text for whatever you'd like to say. Add main takeaway points,
-                            quotes, anecdotes, or even a very very short story.</p>
-                    </div>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="trip-card">
-                    <div class="trip-card__img-placeholder">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                            <rect x="4" y="4" width="32" height="32" rx="4" stroke="#C0C0C0" stroke-width="2"
-                                fill="none" />
-                            <circle cx="14" cy="15" r="3" stroke="#C0C0C0" stroke-width="1.5" fill="none" />
-                            <path d="M4 28l9-8 7 6 5-4 11 10" stroke="#C0C0C0" stroke-width="1.5" stroke-linecap="round"
-                                fill="none" />
-                        </svg>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">Title</h3>
-                        <p class="trip-card__desc">Body text for whatever you'd like to say. Add main takeaway points,
-                            quotes, anecdotes, or even a very very short story.</p>
-                    </div>
-                </div>
+            <div class="upcoming-actions" id="upcoming-actions-wrapper" style="display:none; margin-top: 24px;">
+                <button id="btn-view-all-upcoming" class="btn-view-all-upcoming" onclick="window.toggleAllTrips()">
+                    ดูรอบรถทั้งหมด
+                </button>
             </div>
-
-            <!-- รอบที่ใกล้ออก Section -->
-            <section class="upcoming-section">
-                <div class="upcoming-section__header">
-                    <h2 class="upcoming-section__title">รอบที่ใกล้ออก</h2>
-                    <p class="upcoming-section__subtitle">รอบเดินทางที่กำลังจะออกเร็วๆ นี้</p>
-                </div>
-
-                <div class="upcoming-list">
-                    <!-- Row 1 — very soon -->
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก 15 นาที</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → พัทยา</span>
-                            <span class="upcoming-row__time">วันนี้ · 17:00 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">3</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn">จอง</button>
-                    </div>
-
-                    <!-- Row 2 -->
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge">ใกล้ออก 45 นาที</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → ระยอง</span>
-                            <span class="upcoming-row__time">วันนี้ · 17:30 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">8</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn">จอง</button>
-                    </div>
-
-                    <!-- Row 3 -->
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge">ใกล้ออก 1 ชม.</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → ชลบุรี</span>
-                            <span class="upcoming-row__time">วันนี้ · 18:00 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">12</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn">จอง</button>
-                    </div>
-                </div>
-            </section>
+        </section>
     </main>
+    <div class="modal-overlay" id="booking-modal">
+        <div class="modal-content">
+            <div class="modal-header">🎟️ ยืนยันการจองตั๋ว</div>
+            
+            <div class="modal-field">
+                <span class="modal-label">เลือกลงที่จุดจอด (ราคาจะเปลี่ยนตามจุดลง)</span>
+                <select id="modal-stop-select" class="modal-select"></select>
+            </div>
 
+            <div class="modal-price-box">
+                ยอดชำระ: ฿<span id="modal-price-show">0</span>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="window.closeBookingModal()">ยกเลิก</button>
+                <button class="btn-confirm" id="btn-confirm-booking">ยืนยันการจอง</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
