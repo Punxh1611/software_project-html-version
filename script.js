@@ -1,17 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast } from "./Toast.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
-  authDomain: "vanvan-90cd0.firebaseapp.com",
-  projectId: "vanvan-90cd0",
-  storageBucket: "vanvan-90cd0.firebasestorage.app",
-  messagingSenderId: "234295405835",
-  appId: "1:234295405835:web:b5c3e7842f979af686460e",
-  measurementId: "G-S3MF2CYXZ2"
-};
+ const firebaseConfig = {
+    apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
+    authDomain: "vanvan-90cd0.firebaseapp.com",
+    projectId: "vanvan-90cd0",
+    storageBucket: "vanvan-90cd0.firebasestorage.app",
+    messagingSenderId: "234295405835",
+    appId: "1:234295405835:web:b5c3e7842f979af686460e",
+    measurementId: "G-S3MF2CYXZ2"
+  };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -28,35 +28,43 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
     }
 
     try {
-        let emailToAuth = userInput;
-        if (!userInput.includes("@")) {
-            // ค้นหา Email จาก Firestore โดยใช้ Username
-            const userRef = collection(db, "user");
-            const q = query(userRef, where("username", "==", userInput));
-            const querySnapshot = await getDocs(q);
+    let emailToAuth = userInput;
+    if (!userInput.includes("@")) {
+        // ค้นหา Email จาก Firestore โดยใช้ Username
+        const userRef = collection(db, "user");
+        const q = query(userRef, where("username", "==", userInput));
+        const querySnapshot = await getDocs(q);
 
-            if (querySnapshot.empty) {
-                toast("ไม่พบ Username นี้ในระบบ");
-                return;
-            }
-
-            // ดึง Email ของ User คนนั้นมาเพื่อใช้ Login
-            querySnapshot.forEach((doc) => {
-                emailToAuth = doc.data().email;
-            });
+        if (querySnapshot.empty) {
+            toast("ไม่พบ Username นี้ในระบบ");
+            return;
         }
 
-        // ทำการ Login ด้วย Firebase Auth
-        const userCredential = await signInWithEmailAndPassword(auth, emailToAuth, password);
-        const user = userCredential.user;
+        // ดึง Email ของ User คนนั้นมาเพื่อใช้ Login
+        querySnapshot.forEach((doc) => {
+            emailToAuth = doc.data().email;
+        });
+    }
 
-        console.log("Login Success:", user.uid);
-        
-        // เก็บข้อมูลเบื้องต้นลง SessionStorage (ถ้าต้องการนำไปใช้หน้าอื่น)
-        sessionStorage.setItem("userUID", user.uid);
-        
-        toast("เข้าสู่ระบบสำเร็จ!");
-        window.location.href = "index.html"; // ไปยังหน้าหลัก
+    // --- Login ด้วย Firebase Auth ---
+    const userCredential = await signInWithEmailAndPassword(auth, emailToAuth, password);
+    const uid = userCredential.user.uid;
+
+    // --- Check Role จาก Firestore ---
+    const userDocRef = doc(db, "user", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+        const role = userDoc.data().role;
+
+        if (role === "admin") {
+            window.location.href = "/admin/index.html";
+        } else {
+            window.location.href = "/index.html";
+        }
+    } else {
+        toast("ไม่พบข้อมูลผู้ใช้");
+    }
 
     } catch (error) {
         console.error("Login Error:", error.code);
