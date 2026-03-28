@@ -513,43 +513,84 @@ function renderTrips() {
 // ==========================================
 // 📍 ZONE 4.5: Popular Routes (ปลายทางยอดฮิต)
 // ==========================================
+// ==========================================
+// 📍 ZONE 4.5: Popular Routes (ปลายทางยอดฮิต) - อัปเกรดภาพ & ราคา
+// ==========================================
 function renderPopularRoutes() {
     const container = document.getElementById("quick-routes-chips");
     if (!container) return;
 
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     const currentHourMin = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
-    // 🟢 1. สร้างสถิติโดยแยก "รอบทั้งหมด" กับ "รอบที่เหลืออยู่"
+    // 🟢 คลังรูปภาพสถานที่ (ถ้าไม่มีชื่อในนี้ จะใช้รูป default แทน)
+    const destImages = {
+        "พัทยา": "https://images.unsplash.com/photo-1550850839-8dc894ed385a?w=500&q=80",
+        "หัวหิน": "https://images.unsplash.com/photo-1596524454151-518f87a8cb40?w=500&q=80",
+        "ระยอง": "https://images.unsplash.com/photo-1588693892095-2bd0e14cb751?w=500&q=80",
+        "อยุธยา": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B9%84%E0%B8%8A%E0%B8%A2%E0%B8%A7%E0%B8%B1%E0%B8%92%E0%B8%99%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1_%E0%B8%97%E0%B8%B4%E0%B8%A8%E0%B8%95%E0%B8%B0%E0%B8%A7%E0%B8%B1%E0%B8%99%E0%B8%AD%E0%B8%AD%E0%B8%81.jpg/1920px-%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B9%84%E0%B8%8A%E0%B8%A2%E0%B8%A7%E0%B8%B1%E0%B8%92%E0%B8%99%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1_%E0%B8%97%E0%B8%B4%E0%B8%A8%E0%B8%95%E0%B8%B0%E0%B8%A7%E0%B8%B1%E0%B8%99%E0%B8%AD%E0%B8%AD%E0%B8%81.jpg?w=500&q=80",
+        "นครราชสีมา": "https://images.unsplash.com/photo-1622308644420-b20152b19211?w=500&q=80",
+        "กาญจนบุรี": "https://images.unsplash.com/photo-1599839619722-39751411ea63?w=500&q=80",
+        "อัมพวา" : "https://img.kapook.com/u/2016/suppaporn/amphawa/pic02.jpg",
+        "ฉะเชิงเทรา": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMusRQ_dHe5-TWiK0mcvvAiauv-jtrzvkEUQ&s?w=500&q=80",
+        "นครปฐม": "https://img.kapook.com/u/2020/pattra/pattravel202008/shutterstock_517972276.jpg?w=500&q=80",
+        "นครสวรรค์" : "https://www.checkinchill.com/storage/content/c825325c-4c6b-46ae-958c-c6cbe8079e74.webp?w=500&q=80",
+        "พิษณุโลก" : "https://cms.kapook.com/uploads/tag/4/ID_3614_64b7590b4a92c.jpg?w=500&q=80",
+        "กำแพงเพชร" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0X9JLyqqAM-_bKT-rueNwiGcF5uAJTtDNTw&s?w=500&q=80",
+        "เพชรบูรณ์" : "https://www.ananda.co.th/blog/thegenc/wp-content/uploads/2024/09/shutterstock_2274666959-823x550.jpg?w=500&q=80",
+        "อุทัยธานี" :"https://cdn.spsmartvan.com/wp-content/uploads/2025/03/1.-%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%88%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1-%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%97%E0%B9%88%E0%B8%B2%E0%B8%8B%E0%B8%B8%E0%B8%87.webp?w=500&q=80",
+        "สระบุรี": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2mWYS2INb4e56NU_9MhlX2NU_hKysFpLT0g&s?w=500&q=80", 
+        "ลพบุรี" : "https://upload.wikimedia.org/wikipedia/commons/6/60/%E0%B8%9B%E0%B8%A3%E0%B8%B2%E0%B8%AA%E0%B8%B2%E0%B8%97%E0%B8%9B%E0%B8%A3%E0%B8%B2%E0%B8%87%E0%B8%84%E0%B9%8C%E0%B8%AA%E0%B8%B2%E0%B8%A1%E0%B8%A2%E0%B8%AD%E0%B8%942.jpg?w=500&q=80", 
+        "ชัยภูมิ" : "https://cdn.spsmartvan.com/wp-content/uploads/2025/03/2.-%E0%B8%9C%E0%B8%B2%E0%B8%AA%E0%B8%B8%E0%B8%94%E0%B9%81%E0%B8%9C%E0%B9%88%E0%B8%99%E0%B8%94%E0%B8%B4%E0%B8%99-%E0%B8%AD%E0%B8%B8%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%99%E0%B9%81%E0%B8%AB%E0%B9%88%E0%B8%87%E0%B8%8A%E0%B8%B2%E0%B8%95%E0%B8%B4%E0%B8%9B%E0%B9%88%E0%B8%B2%E0%B8%AB%E0%B8%B4%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%A1.jpeg?w=500&q=80", 
+        "บุรีรัมย์" : "https://s.isanook.com/tr/0/ui/283/1419929/1f33d8b6ca79cdeeb610726556513679_1583919972.jpg?w=500&q=80",
+        "สุพรรณบุรี" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR089kTlpq3LdrkaWxMdy8swmfnPTLJNzEgAQ&s?w=500&q=80", 
+        "สิงห์บุรี" : "https://s.isanook.com/tr/0/ud/282/1413113/istock-537985975.jpg?ip/resize/w728/q80/jpg?w=500&q=80", 
+        "ชัยนาท" : "https://travel.mthai.com/app/uploads/2014/12/unnamed2-1.jpg?w=500&q=80",
+        "สัตหีบ" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWGyStRiDRbivGLTmlis96-VC7zH89A08rXA&s?w=500&q=80",  
+        "จันทบุรี" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaJMgr4U3UujvWHWoC6L67YF66Z4G2I9Mm0w&s?w=500&q=80", 
+        "ตราด": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIwJ6_4P7LmvZim-gUVo6CbQHrO3fdsbsUZQ&s?w=500&q=80", 
+        "ปราจีนบุรี" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa0xDSpb3XMLZN81bQa1vDYflyLkHMP38s-A&s?w=500&q=80", 
+        "สระแก้ว" : "https://s359.kapook.com/pagebuilder/55ec8246-ee24-4923-b55c-1f99642990d6.jpg?w=500&q=80",
+        "ราชบุรี" : "https://www.rentconnected.com/blogs/wp-content/webpc-passthru.php?src=https://www.rentconnected.com/blogs/wp-content/uploads/2023/03/%E0%B9%80%E0%B8%82%E0%B8%B2%E0%B8%AB%E0%B8%B4%E0%B8%99%E0%B8%87%E0%B8%B9_1500px-1024x768.jpg&nocache=1&w=500&q=80   ", 
+        "มหาชัย" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSE_RIU5Ex1rgnzDJ3Ri95HuxzzI0yc1MelNg&s?w=500&q=80",
+        "default": "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=500&q=80" // รูปถนนสวยๆ ในไทย
+    };
+
+ 
+
     const destStats = {};
     allTrips.forEach(trip => {
         if (trip.date !== todayStr) return;
-
+        
         const dest = trip.destination;
         if (!dest) return;
-
+        
         if (!destStats[dest]) {
-            destStats[dest] = {
-                destination: dest,
-                totalTrips: 0,       // นับเที่ยวทั้งหมดของวันนี้ (ใช้วัดความฮิต)
-                upcomingTrips: 0,    // นับเฉพาะเที่ยวที่ยังไม่ออก
-                totalSeats: 0,       // นับที่นั่งเฉพาะเที่ยวที่ยังไม่ออก
-                origin: trip.origin || "หมอชิต 2"
+            destStats[dest] = { 
+                destination: dest, 
+                totalTrips: 0,       
+                upcomingTrips: 0,    
+                totalSeats: 0,
+                minPrice: Infinity, // 🟢 เพิ่มตัวแปรเก็บราคาถูกที่สุด      
+                origin: trip.origin || "หมอชิต 2" 
             };
         }
-
-        // นับความฮิตจากรอบรถ "ทั้งหมด" ในวันนี้ (แม้จะออกไปแล้วก็ยังถูกนับให้อยู่บนแท่น)
+        
         destStats[dest].totalTrips++;
-
-        // แต่นับที่นั่งว่าง เฉพาะรถที่ "ยังไม่ออกเดินทาง"
+        
+        // หาราคาเริ่มต้นที่ถูกที่สุดของสายนี้
+        const tripPrice = parseFloat(trip.price) || 150;
+        if (tripPrice < destStats[dest].minPrice) {
+            destStats[dest].minPrice = tripPrice;
+        }
+        
         if (trip.time >= currentHourMin) {
             destStats[dest].upcomingTrips++;
             destStats[dest].totalSeats += (trip.availableSeats || 0);
         }
     });
 
-    // 🟢 2. จัดอันดับจากรอบทั้งหมด แล้วดึงมา 4 อันดับ
     const topRoutes = Object.values(destStats)
         .sort((a, b) => b.totalTrips - a.totalTrips)
         .slice(0, 4);
@@ -561,34 +602,43 @@ function renderPopularRoutes() {
 
     container.innerHTML = "";
     topRoutes.forEach(route => {
-        // 🟢 3. เช็คสถานะเพื่อปรับปุ่มให้ฉลาดขึ้น (จอง / เต็ม / หมดรอบ)
         let btnText = "จอง";
         let isDisabled = false;
 
         if (route.upcomingTrips === 0) {
-            btnText = "หมดรอบ"; // กรณีรถเที่ยวสุดท้ายของวันออกไปแล้ว
+            btnText = "หมดรอบ"; 
             isDisabled = true;
         } else if (route.totalSeats <= 0) {
-            btnText = "เต็ม";    // กรณีรถยังไม่ออก แต่คนจองเต็มแล้ว
+            btnText = "เต็ม";    
             isDisabled = true;
         }
 
+        const displayPrice = route.minPrice === Infinity ? "150" : route.minPrice;
+        const imgUrl = destImages[route.destination] || destImages["default"];
+
         const card = document.createElement("div");
         card.className = "popular-route-card";
+        
+        // 🟢 เปลี่ยนโครงสร้าง HTML ให้มีรูปภาพและป้ายราคา
         card.innerHTML = `
-            <div class="popular-route-card__info">
-                <span class="popular-route-card__dest">📍 ${route.destination}</span>
+            <div class="popular-route-card__img-box">
+                <img src="${imgUrl}" alt="${route.destination}" class="popular-route-card__img">
+                <div class="popular-route-card__price-badge">เริ่มต้น ฿${displayPrice}</div>
             </div>
-            <button class="popular-route-card__btn" ${isDisabled ? 'disabled' : ''}>
-                ${btnText}
-            </button>
+            <div class="popular-route-card__content">
+                <div class="popular-route-card__info">
+                    <span class="popular-route-card__dest">${route.destination}</span>
+                    <span class="popular-route-card__stats">รถเหลือ ${route.upcomingTrips} เที่ยว</span>
+                </div>
+                <button class="popular-route-card__btn" ${isDisabled ? 'disabled' : ''}>
+                    ${btnText}
+                </button>
+            </div>
         `;
 
-        // 🟢 4. เมื่อกดปุ่ม "จอง" (ทำงานเฉพาะตอนที่ไม่ disabled)
         const bookBtn = card.querySelector(".popular-route-card__btn");
         if (bookBtn && !isDisabled) {
             bookBtn.addEventListener("click", () => {
-                // หา terminal ที่ตรงกับ destination
                 let foundTerminal = null;
                 for (const [terminal, dests] of Object.entries(destinationsByTerminal)) {
                     if (dests.includes(route.destination)) {
@@ -601,13 +651,11 @@ function renderPopularRoutes() {
                 const destInput = document.getElementById("search-dest");
                 const dateInput = document.getElementById("search-date");
 
-                // เซ็ตค่า terminal
                 if (foundTerminal && terminalInput) {
                     const terminalLabels = { A: "อาคาร A (เหนือ / อีสาน)", B: "อาคาร B (กลาง)", C: "อาคาร C (ตะวันออก)", D: "อาคาร D (ใต้ / ตะวันตก)" };
                     terminalInput.value = terminalLabels[foundTerminal] || `อาคาร ${foundTerminal}`;
                     terminalInput.dataset.value = foundTerminal;
 
-                    // Populate destination dropdown
                     const destDropdown = document.getElementById("dest-dropdown");
                     const destinations = destinationsByTerminal[foundTerminal] || [];
                     if (destDropdown) {
@@ -623,32 +671,25 @@ function renderPopularRoutes() {
                     }
                 }
 
-                // เซ็ตค่า destination
                 if (destInput) {
                     destInput.value = route.destination;
                     destInput.dataset.value = route.destination;
                     destInput.disabled = false;
                 }
 
-                // เซ็ตวันที่เป็นวันนี้
                 if (dateInput?._flatpickr) {
                     dateInput._flatpickr.setDate(new Date(), true);
                 }
 
-                // ทำการค้นหาเลย
                 currentFilter = { origin: route.origin, destination: route.destination, date: todayStr };
-
                 showAllTrips = false;
-                const toggleBtn = document.getElementById("");
+                const toggleBtn = document.getElementById("btn-view-all-upcoming");
                 if (toggleBtn) toggleBtn.textContent = "ดูรอบรถทั้งหมด";
 
                 renderTrips();
-
-                // Scroll ไปยังผลการค้นหา
                 document.querySelector(".upcoming-section")?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         }
-
         container.appendChild(card);
     });
 }
