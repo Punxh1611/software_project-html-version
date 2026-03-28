@@ -220,11 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3.3 ระบบปุ่มค้นหา (Search Logic)
     const btnSearch = document.getElementById("btn-search");
     const originInput = document.getElementById("search-origin");
-    
+
     btnSearch?.addEventListener("click", () => {
         const origin = originInput ? originInput.value.trim() : "หมอชิต 2";
         const dest = destInput?.dataset?.value || destInput?.value?.trim();
-        
+
         if (!origin || !dest || !dateInput.value) {
             alert("กรุณาเลือกอาคาร จุดลงรถ และวันที่เดินทางให้ครบถ้วนก่อนค้นหาครับ");
             return;
@@ -236,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
             const day = String(dateObj.getDate()).padStart(2, '0');
-            dateStr = `${year}-${month}-${day}`; 
+            dateStr = `${year}-${month}-${day}`;
         } else {
             dateStr = dateInput.value;
         }
@@ -246,11 +246,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const upcomingSec = document.querySelector(".upcoming-section");
         if (upcomingSec) upcomingSec.style.display = "block";
 
-        renderTrips(); 
+        renderTrips();
     });
 
     // 3.5 ฟังก์ชันเคลียร์การค้นหา (global)
-    window.clearSearch = function() {
+    window.clearSearch = function () {
         currentFilter = null;
         showAllTrips = false;
 
@@ -309,20 +309,20 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // 🚐 ZONE 4: Database Listener & Rendering
 // ==========================================
-let allTrips = []; 
+let allTrips = [];
 let showAllTrips = false;
 
 onSnapshot(collection(db, "trips"), (querySnapshot) => {
-    allTrips = []; 
+    allTrips = [];
     querySnapshot.forEach((docSnap) => {
-        allTrips.push({ id: docSnap.id, ...docSnap.data() }); 
+        allTrips.push({ id: docSnap.id, ...docSnap.data() });
     });
     renderTrips();
     renderPopularRoutes();
 });
 
 function calculateArrivalTime(startTime, price) {
-    const durationMinutes = Math.floor(price * 1.2); 
+    const durationMinutes = Math.floor(price * 1.2);
     const [hours, minutes] = startTime.split(':').map(Number);
     const date = new Date();
     date.setHours(hours, minutes + durationMinutes, 0);
@@ -331,14 +331,10 @@ function calculateArrivalTime(startTime, price) {
     return `${endHours}:${endMins}`;
 }
 
-// ปุ่ม "ดูรอบรถทั้งหมด"
-window.toggleAllTrips = function() {
-    showAllTrips = !showAllTrips;
-    const btn = document.getElementById("btn-view-all-upcoming");
-    if (btn) {
-        btn.textContent = showAllTrips ? "แสดงน้อยลง" : "ดูรอบรถทั้งหมด";
-    }
-    renderTrips();
+// ปุ่ม "ดูรอบรถทั้งหมด / แสดงน้อยลง"
+window.toggleAllTrips = function () {
+    showAllTrips = !showAllTrips; // สลับค่าไปมา (True/False)
+    renderTrips(); // สั่งให้ระบบคำนวณและวาดปุ่มใหม่เอง
 };
 
 function renderTrips() {
@@ -348,10 +344,11 @@ function renderTrips() {
     tripGrid.innerHTML = "";
 
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const currentHourMin = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
     let displayData = [];
+    let filteredTrips = []; // 🟢 เพิ่มตัวแปรนี้เพื่อเก็บรถที่ผ่านเงื่อนไขทั้งหมดก่อนตัด 6 คัน
 
     const promoBanner = document.querySelector(".promo-banner");
     const quickRoutes = document.querySelector(".quick-routes");
@@ -360,13 +357,12 @@ function renderTrips() {
 
     if (currentFilter) {
         document.getElementById("main-list-title").innerHTML = `🔍 ผลการค้นหา`;
-        // 🟢 แก้ไข: ใส่กล่อง Flex เพื่อจัดให้ปุ่มอยู่ขวาสุด
         document.getElementById("main-list-subtitle").innerHTML = `
             <div class="search-title-flex">
                 <span class="search-title-text">
                     📍 ${currentFilter.origin} ➔ ${currentFilter.destination} | 📅 วันที่ ${currentFilter.date}
                 </span>
-                <button class="btn-clear-filter-themed" onclick="window.clearSearch() ">
+                <button class="btn-clear-filter-themed" onclick="window.clearSearch()">
                     ✕ ล้างผลค้นหา
                 </button>
             </div>
@@ -376,11 +372,13 @@ function renderTrips() {
         if (howItWorks) howItWorks.style.display = "none";
         if (serviceHighlights) serviceHighlights.style.display = "none";
 
-        displayData = allTrips.filter(trip => {
+        // 🟢 โหมดค้นหา: ดึงรถตามวันที่และเส้นทางที่เลือก
+        filteredTrips = allTrips.filter(trip => {
             const isMatch = (trip.origin?.trim() === currentFilter.origin) &&
                             (trip.destination?.trim() === currentFilter.destination) &&
                             (trip.date === currentFilter.date);
             if (!isMatch) return false;
+            // ถ้ารถเป็นของวันนี้ เช็คว่าเวลายังไม่ผ่านไป
             if (trip.date === todayStr) return trip.time >= currentHourMin; 
             if (trip.date < todayStr) return false; 
             return true;
@@ -388,27 +386,53 @@ function renderTrips() {
         
     } else {
         document.getElementById("main-list-title").innerText = "🚐 รอบที่ใกล้ออก";
-        document.getElementById("main-list-subtitle").innerText = "รอบเดินทางของวันนี้ที่เปิดให้จอง";
+        document.getElementById("main-list-subtitle").innerText = "รอบเดินทางภายใน 1 ชั่วโมงนี้";
 
         if (promoBanner) promoBanner.style.display = "";
         if (quickRoutes) quickRoutes.style.display = "";
         if (howItWorks) howItWorks.style.display = "";
         if (serviceHighlights) serviceHighlights.style.display = "";
 
-        // แสดงเฉพาะรอบวันนี้เท่านั้น (ไม่โหลดวันอื่นเพื่อไม่ให้หน้าเว็บค้าง)
-        const filtered = allTrips.filter(trip => {
-            return trip.date === todayStr && trip.time >= currentHourMin;
-        }).sort((a, b) => a.time.localeCompare(b.time));
+        // 🟢 โหมดหน้าแรก: ดึงเฉพาะรถที่กำลังจะออกภายใน 1 ชั่วโมง
+        const nowMs = now.getTime(); // เวลาปัจจุบัน (มิลลิวินาที)
+        const oneHourLaterMs = nowMs + (60 * 60 * 1000); // เวลาบวกไปอีก 1 ชั่วโมง (60 นาที * 60 วินาที * 1000 มิลลิวินาที)
 
-        displayData = showAllTrips ? filtered : filtered.slice(0, 6);
+        filteredTrips = allTrips.filter(trip => {
+            // แปลงวันที่และเวลาของรอบรถแต่ละคันให้เป็น Timestamp
+            const tripDateTime = new Date(`${trip.date}T${trip.time}:00`);
+            const tripMs = tripDateTime.getTime();
+            
+            // เช็คว่า: รถต้องยังไม่ออก (>= เวลาปัจจุบัน) และ ต้องออกภายใน 1 ชั่วโมง (<= เวลาอีก 1 ชม.ข้างหน้า)
+            return tripMs >= nowMs && tripMs <= oneHourLaterMs;
+            
+        }).sort((a, b) => {
+            if (a.date === b.date) return a.time.localeCompare(b.time);
+            return a.date.localeCompare(b.date);
+        });
+    }
+    // ==========================================
+    // 🟢 โลจิกปุ่ม "ดูรอบรถทั้งหมด" (ใช้ร่วมกันทั้งหน้าแรกและตอนค้นหา)
+    // ==========================================
+    
+    // ถ้ากดดูทั้งหมด ให้โชว์เต็มๆ แต่ถ้าไม่ได้กด ให้ตัดมาแค่ 6 รอบ
+    displayData = showAllTrips ? filteredTrips : filteredTrips.slice(0, 6);
 
-        // แสดง/ซ่อนปุ่ม "ดูรอบรถทั้งหมด" เมื่อมีมากกว่า 6 รอบ
-        const actionsWrapper = document.getElementById("upcoming-actions-wrapper");
-        if (actionsWrapper) {
-            actionsWrapper.style.display = filtered.length > 6 ? "" : "none";
+    const actionsWrapper = document.getElementById("upcoming-actions-wrapper");
+    const btnViewAll = document.getElementById("btn-view-all-upcoming");
+    
+    if (actionsWrapper && btnViewAll) {
+        // ถ้ารอบรถรวมทั้งหมดมีมากกว่า 6 คัน
+        if (filteredTrips.length > 6) {
+            actionsWrapper.style.display = "block"; 
+            btnViewAll.innerText = showAllTrips ? "✕ แสดงน้อยลง" : "ดูรอบรถทั้งหมด";
+        } else {
+            // ถ้ารอบรถมี 6 คัน หรือน้อยกว่า
+            actionsWrapper.style.display = "none";
         }
     }
 
+    // 🟢 (โค้ดหา lastTripsMap ของเดิม ปล่อยไว้เหมือนเดิมครับ)
+    
     const lastTripsMap = {};
     allTrips.forEach(trip => {
         if (trip.date === todayStr) {
@@ -419,12 +443,12 @@ function renderTrips() {
     });
 
     if (displayData.length === 0) {
-        tripGrid.innerHTML = "<p style='text-align:center; padding: 40px; color:#757575;'>ไม่มีรอบรถในขณะนี้ครับ</p>";
+        tripGrid.innerHTML = "<p style='text-align:center; padding: 40px; color:#757575;'>ไม่มีรอบรถในขณะนี้</p>";
     } else {
         displayData.forEach(trip => {
             const isFull = trip.availableSeats <= 0;
             const arrivalTime = calculateArrivalTime(trip.time, trip.price);
-            
+
             const isLastTrip = (lastTripsMap[trip.routeId] && lastTripsMap[trip.routeId].id === trip.id);
             const lastTripBadge = isLastTrip ? `<span style="background:#E8520A; color:white; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:8px; animation: blink 2s infinite;">🔥 รถเที่ยวสุดท้าย</span>` : '';
 
@@ -434,7 +458,7 @@ function renderTrips() {
             } else {
                 const tomorrow = new Date(now);
                 tomorrow.setDate(now.getDate() + 1);
-                const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
+                const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
                 if (trip.date === tomorrowStr) {
                     dateBadge = `<div style="font-size: 12px; color: #2E86C1; font-weight: normal;">พรุ่งนี้</div>`;
                 } else {
@@ -494,24 +518,38 @@ function renderPopularRoutes() {
     if (!container) return;
 
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const currentHourMin = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
-    // นับจำนวนเที่ยวและที่นั่งว่างรวมของวันนี้ จำแนกตาม destination
+    // 🟢 1. สร้างสถิติโดยแยก "รอบทั้งหมด" กับ "รอบที่เหลืออยู่"
     const destStats = {};
     allTrips.forEach(trip => {
         if (trip.date !== todayStr) return;
-        if (trip.time < currentHourMin) return;
+
         const dest = trip.destination;
         if (!dest) return;
+
         if (!destStats[dest]) {
-            destStats[dest] = { destination: dest, totalTrips: 0, totalSeats: 0, origin: trip.origin || "หมอชิต 2" };
+            destStats[dest] = {
+                destination: dest,
+                totalTrips: 0,       // นับเที่ยวทั้งหมดของวันนี้ (ใช้วัดความฮิต)
+                upcomingTrips: 0,    // นับเฉพาะเที่ยวที่ยังไม่ออก
+                totalSeats: 0,       // นับที่นั่งเฉพาะเที่ยวที่ยังไม่ออก
+                origin: trip.origin || "หมอชิต 2"
+            };
         }
+
+        // นับความฮิตจากรอบรถ "ทั้งหมด" ในวันนี้ (แม้จะออกไปแล้วก็ยังถูกนับให้อยู่บนแท่น)
         destStats[dest].totalTrips++;
-        destStats[dest].totalSeats += (trip.availableSeats || 0);
+
+        // แต่นับที่นั่งว่าง เฉพาะรถที่ "ยังไม่ออกเดินทาง"
+        if (trip.time >= currentHourMin) {
+            destStats[dest].upcomingTrips++;
+            destStats[dest].totalSeats += (trip.availableSeats || 0);
+        }
     });
 
-    // เรียงตาม popularity (จำนวนเที่ยว) แล้วเอา top 5
+    // 🟢 2. จัดอันดับจากรอบทั้งหมด แล้วดึงมา 4 อันดับ
     const topRoutes = Object.values(destStats)
         .sort((a, b) => b.totalTrips - a.totalTrips)
         .slice(0, 4);
@@ -523,22 +561,32 @@ function renderPopularRoutes() {
 
     container.innerHTML = "";
     topRoutes.forEach(route => {
-        const seatColor = route.totalSeats <= 0 ? '#e53935' : (route.totalSeats <= 5 ? '#E67E22' : '#2E7D32');
+        // 🟢 3. เช็คสถานะเพื่อปรับปุ่มให้ฉลาดขึ้น (จอง / เต็ม / หมดรอบ)
+        let btnText = "จอง";
+        let isDisabled = false;
+
+        if (route.upcomingTrips === 0) {
+            btnText = "หมดรอบ"; // กรณีรถเที่ยวสุดท้ายของวันออกไปแล้ว
+            isDisabled = true;
+        } else if (route.totalSeats <= 0) {
+            btnText = "เต็ม";    // กรณีรถยังไม่ออก แต่คนจองเต็มแล้ว
+            isDisabled = true;
+        }
+
         const card = document.createElement("div");
         card.className = "popular-route-card";
         card.innerHTML = `
             <div class="popular-route-card__info">
                 <span class="popular-route-card__dest">📍 ${route.destination}</span>
-                
             </div>
-            <button class="popular-route-card__btn" ${route.totalSeats <= 0 ? 'disabled' : ''}>
-                ${route.totalSeats <= 0 ? 'เต็ม' : 'จอง'}
+            <button class="popular-route-card__btn" ${isDisabled ? 'disabled' : ''}>
+                ${btnText}
             </button>
         `;
 
-        // เมื่อกดปุ่ม "จอง" → auto-fill search แล้วค้นหา
+        // 🟢 4. เมื่อกดปุ่ม "จอง" (ทำงานเฉพาะตอนที่ไม่ disabled)
         const bookBtn = card.querySelector(".popular-route-card__btn");
-        if (bookBtn && route.totalSeats > 0) {
+        if (bookBtn && !isDisabled) {
             bookBtn.addEventListener("click", () => {
                 // หา terminal ที่ตรงกับ destination
                 let foundTerminal = null;
@@ -591,7 +639,7 @@ function renderPopularRoutes() {
                 currentFilter = { origin: route.origin, destination: route.destination, date: todayStr };
 
                 showAllTrips = false;
-                const toggleBtn = document.getElementById("btn-view-all-upcoming");
+                const toggleBtn = document.getElementById("");
                 if (toggleBtn) toggleBtn.textContent = "ดูรอบรถทั้งหมด";
 
                 renderTrips();
@@ -611,7 +659,7 @@ function renderPopularRoutes() {
 let currentBookingTripId = null;
 let currentBookingSeats = null;
 
-window.bookTicket = async function(tripId, routeId, currentSeats) {
+window.bookTicket = async function (tripId, routeId, currentSeats) {
     if (currentSeats <= 0) {
         alert("ขออภัยครับ รถรอบนี้ที่นั่งเต็มแล้ว 😭");
         return;
@@ -622,13 +670,13 @@ window.bookTicket = async function(tripId, routeId, currentSeats) {
 
     const stopSelect = document.getElementById("modal-stop-select");
     const priceShow = document.getElementById("modal-price-show");
-    
+
     stopSelect.innerHTML = `<option value="">กำลังโหลดจุดจอด...</option>`;
     document.getElementById("booking-modal").classList.add("active");
 
     try {
         const routeDoc = await getDoc(doc(db, "routes", routeId));
-        stopSelect.innerHTML = ""; 
+        stopSelect.innerHTML = "";
 
         if (routeDoc.exists() && routeDoc.data().stops) {
             const routeInfo = routeDoc.data();
@@ -651,7 +699,7 @@ document.getElementById("modal-stop-select")?.addEventListener("change", (e) => 
     document.getElementById("modal-price-show").innerText = e.target.value;
 });
 
-window.closeBookingModal = function() {
+window.closeBookingModal = function () {
     document.getElementById("booking-modal").classList.remove("active");
     currentBookingTripId = null;
 };
@@ -671,7 +719,7 @@ document.getElementById("btn-confirm-booking")?.addEventListener("click", async 
 
         alert(`🎉 จองตั๋วสำเร็จ!\n${selectedStopName}\nยอดชำระเงิน: ฿${finalPrice}`);
         window.closeBookingModal();
-        
+
     } catch (error) {
         console.error("เกิดข้อผิดพลาดในการจอง:", error);
         alert("❌ ระบบขัดข้อง: " + error.message);
@@ -682,9 +730,9 @@ document.getElementById("btn-confirm-booking")?.addEventListener("click", async 
 // 🛠️ ZONE 6: System Utilities (Live Sync & Mock Data)
 // ==========================================
 setInterval(() => {
-    if (!currentFilter) { 
+    if (!currentFilter) {
         renderTrips();
-        console.log("⏱️ Live Sync: อัปเดตตารางรถตามเวลาปัจจุบันเรียบร้อย"); 
+        console.log("⏱️ Live Sync: อัปเดตตารางรถตามเวลาปัจจุบันเรียบร้อย");
     }
 }, 60000);
 

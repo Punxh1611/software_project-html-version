@@ -512,7 +512,7 @@ a { text-decoration: none; }
 /* ─────────────────────────────
    SEARCH RESULT FILTER ACTIONS
 ───────────────────────────── */
-.search-title-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 5px; }
+.search-title-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 5px; margin-bottom: 10px; }
 .search-title-text { font-size: 14px; color: #555555; font-weight: 500; }
 .btn-clear-filter-themed {
     background-color: transparent; border: 1.5px solid var(--blue-mid); color: var(--blue-mid);
@@ -569,4 +569,9 @@ a { text-decoration: none; }
     
     .custom-dropdown { position: fixed; left: 16px; right: 16px; bottom: 0; top: auto; border-radius: 16px 16px 0 0; }
     .custom-dropdown.active { max-height: 60vh; }
+}
+
+/* เพิ่มช่องว่างด้านบนของปุ่มดูรอบรถทั้งหมด */
+.upcoming-actions {
+    margin-top: 24px; /* ลองเปลี่ยนตัวเลขดูได้ครับ เช่น 30px หรือ 40px */
 }
