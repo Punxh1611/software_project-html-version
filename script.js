@@ -19,12 +19,24 @@ function setError(id, msg) {
     el.parentElement.appendChild(span);
 }
 
+function setOk(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("input--error");
+    el.classList.add("input--success");
+    el.parentElement.querySelector(".field-error-msg")?.remove();
+}
+
 function clearField(id) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.remove("input--error", "input--success");
     el.parentElement.querySelector(".field-error-msg")?.remove();
 }
+
+// ═══════════════════════════════════════════
+// VALIDATE
+// ═══════════════════════════════════════════
 
 function validate() {
     ["username", "password"].forEach(clearField);
@@ -38,6 +50,8 @@ function validate() {
     } else if (username.length < 3) {
         setError("username", "⚠ ต้องมีอย่างน้อย 3 ตัวอักษร");
         ok = false;
+    } else {
+        setOk("username");
     }
 
     if (!password) {
@@ -46,6 +60,8 @@ function validate() {
     } else if (password.length < 6) {
         setError("password", "⚠ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
         ok = false;
+    } else {
+        setOk("password");
     }
 
     return ok;
@@ -91,11 +107,14 @@ async function doLogin() {
         localStorage.setItem("user",  JSON.stringify(data.user));
 
         toast("เข้าสู่ระบบสำเร็จ! 🎉", "success");
+
+        // Redirect ตาม role
         setTimeout(() => {
-            window.location.href = data.user.role === "admin"
-                ? "admin/index.html"
-                : "index.html";
-        }, 900);
+            const role = data.user.role;
+            if (role === "admin")  window.location.href = "admin/index.html";
+            else if (role === "driver") window.location.href = "driver/index.html";
+            else window.location.href = "index.html";
+        }, 1500);
 
     } catch (err) {
         console.error("Login error:", err);
@@ -107,11 +126,21 @@ async function doLogin() {
 }
 
 // ═══════════════════════════════════════════
-// PASSWORD TOGGLE
+// PASSWORD TOGGLE (ลูกตา)
 // ═══════════════════════════════════════════
 
-const EYE_ON  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-const EYE_OFF = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+const EYE_ON  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+</svg>`;
+
+const EYE_OFF = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+</svg>`;
 
 function initToggles() {
     document.querySelectorAll(".btn-eye[data-toggle]").forEach(btn => {
@@ -134,14 +163,26 @@ function initToggles() {
 document.addEventListener("DOMContentLoaded", () => {
     initToggles();
 
+    // ถ้า Login อยู่แล้ว ไปหน้าหลักเลย
+    const token = localStorage.getItem("token");
+    const user  = JSON.parse(localStorage.getItem("user") || "null");
+    if (token && user) {
+        if (user.role === "admin")       window.location.href = "admin/index.html";
+        else if (user.role === "driver") window.location.href = "driver/index.html";
+        else                             window.location.href = "index.html";
+        return;
+    }
+
     document.getElementById("btn-login")
         ?.addEventListener("click", doLogin);
 
+    // Clear error เมื่อพิมพ์
     document.getElementById("username")
         ?.addEventListener("input", () => clearField("username"));
     document.getElementById("password")
         ?.addEventListener("input", () => clearField("password"));
 
+    // กด Enter login ได้เลย
     ["username", "password"].forEach(id => {
         document.getElementById(id)
             ?.addEventListener("keydown", e => {

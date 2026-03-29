@@ -19,25 +19,22 @@
         <div class="card">
             <div class="card-title">Sign in to your account</div>
 
+            <!-- Username -->
             <div class="field">
                 <label for="username">Username or Email</label>
-                <input type="text" id="username" placeholder="Enter your username or email"
+                <input type="text" id="username"
+                       placeholder="Enter your username or email"
                        autocomplete="username">
             </div>
 
-            <!-- ✅ เพิ่ม field--password + ปุ่มลูกตา -->
+            <!-- Password + ปุ่มลูกตา -->
             <div class="field field--password">
                 <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter your password"
+                <input type="password" id="password"
+                       placeholder="Enter your password"
                        autocomplete="current-password">
-                <button class="btn-eye" data-toggle="password" type="button" aria-label="แสดง/ซ่อนรหัสผ่าน">
-                    <!-- eye-on icon (default) -->
-                    <svg id="eye-icon-password" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                </button>
+                <button class="btn-eye" data-toggle="password"
+                        type="button" aria-label="แสดง/ซ่อนรหัสผ่าน"></button>
             </div>
 
             <button class="btn-signin" id="btn-login">Sign In</button>

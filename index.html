@@ -8,12 +8,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
-    <script src="./main.js" type="module"></script>
+    <style>
+        /* Dropdown + date input ภายใน hero field */
+        .hero__field-input select,
+        .hero__field-input input[type="date"] {
+            border: none;
+            background: transparent;
+            font-family: var(--font-thai);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--color-black);
+            outline: none;
+            flex: 1;
+            cursor: pointer;
+            min-width: 0;
+        }
+        .hero__field-input input[type="date"] {
+            width: 130px;
+        }
+        .hero__field-input select option {
+            font-weight: 400;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- ✅ Drawer Overlay — แค่ dimmer (มืด) เท่านั้น ไม่มี content -->
-    <!-- Avatar upload จัดการผ่าน #avatar-btn ใน navbar desktop แทน -->
+    <!-- Drawer Overlay -->
     <div class="drawer-overlay" id="drawer-overlay"></div>
 
     <!-- Mobile Drawer -->
@@ -27,14 +47,12 @@
             </button>
         </div>
         <div class="drawer__body">
-            <!-- inject โดย main.js (renderLoggedIn / renderLoggedOut) -->
             <div id="nav-drawer-links"></div>
         </div>
     </nav>
 
     <!-- Navbar -->
     <header class="navbar">
-        <!-- Mobile: hamburger -->
         <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M3 6h18M3 12h18M3 18h18" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
@@ -47,15 +65,9 @@
                 <path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
         </button>
-
-        <!-- Desktop: logo -->
         <div class="navbar__left">
-            <div class="logo">
-                <span class="van-text">VANVAN</span>
-            </div>
+            <div class="logo"><span class="van-text">VANVAN</span></div>
         </div>
-
-        <!-- Desktop: inject โดย main.js -->
         <nav class="navbar__actions" id="nav-actions-desktop"></nav>
     </header>
 
@@ -64,26 +76,24 @@
         <div class="hero__overlay"></div>
         <div class="hero__search-box">
             <div class="hero__search-row">
+
                 <!-- จาก -->
                 <div class="hero__field">
                     <span class="hero__field-label">จาก</span>
                     <div class="hero__field-input">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor"
-                                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <div class="hero__field-content">
-                            <span class="hero__field-city" id="field-from">กรุงเทพ</span>
-                            <span class="hero__field-code">(BKKA)</span>
-                        </div>
+                        <select id="field-from">
+                            <option value="">เลือกต้นทาง</option>
+                        </select>
                     </div>
                 </div>
 
                 <!-- Swap -->
-                <button class="hero__swap-btn" id="swap-btn" title="สลับต้นทาง-ปลายทาง">
+                <button class="hero__swap-btn" id="swap-btn" title="สลับ">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
 
@@ -92,13 +102,11 @@
                     <span class="hero__field-label">ถึง</span>
                     <div class="hero__field-input">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor"
-                                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <div class="hero__field-content">
-                            <span class="hero__field-city" id="field-to">พัทยา</span>
-                            <span class="hero__field-code" id="field-to-code">(PYX)</span>
-                        </div>
+                        <select id="field-to">
+                            <option value="">เลือกปลายทาง</option>
+                        </select>
                     </div>
                 </div>
 
@@ -110,32 +118,18 @@
                             <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
                             <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                         </svg>
-                        <span class="hero__field-city" id="field-date">วันนี้</span>
+                        <input type="date" id="field-date">
                     </div>
                 </div>
 
-                <!-- โป-กลับ -->
-                <div class="hero__field">
-                    <div class="hero__roundtrip-label">
-                        <input type="checkbox" id="roundtrip" class="hero__checkbox">
-                        <label for="roundtrip" class="hero__field-label">โป-กลับ</label>
-                    </div>
-                    <div class="hero__field-input hero__field-input--muted">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
-                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
-                        <span class="hero__field-city hero__field-city--muted" id="field-return">เลือกวันกลับ</span>
-                    </div>
-                </div>
-
-                <!-- ปุ่ม Search -->
+                <!-- Search -->
                 <button class="hero__search-btn" id="search-btn">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="7" stroke="white" stroke-width="2.2"/>
                         <path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
                     </svg>
                 </button>
+
             </div>
         </div>
     </section>
@@ -143,49 +137,22 @@
     <!-- Main Content -->
     <main class="main">
         <section class="section-card">
+
             <div class="section-card__header">
                 <h2 class="section-card__title">Most pickup</h2>
-                <p class="section-card__subtitle">คนจองมากที่สุด</p>
+                <p class="section-card__subtitle">เส้นทางยอดนิยม</p>
             </div>
 
-            <div class="trip-grid">
-                <!-- Card 1 — Featured -->
-                <div class="trip-card trip-card--featured">
-                    <div class="trip-card__img-wrapper">
-                        <img src="https://placehold.co/277x169/355872/white?text=พัทยา" alt="พัทยา"
-                            class="trip-card__img">
-                        <span class="trip-card__countdown">ใกล้ออก 15 นาที</span>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">พัทยา</h3>
-                        <p class="trip-card__time">รอบเดินทาง : 17:00</p>
-                        <button class="trip-card__btn" onclick="handleBook('พัทยา')">จอง</button>
-                    </div>
-                </div>
-
-                <!-- Card 2 -->
+            <!-- Trip Cards — inject โดย main.js -->
+            <div class="trip-grid" id="trip-grid">
                 <div class="trip-card">
-                    <div class="trip-card__img-wrapper">
-                        <img src="https://placehold.co/277x169/4A6D8C/white?text=ระยอง" alt="ระยอง"
-                            class="trip-card__img">
+                    <div class="trip-card__img-placeholder">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                            <rect x="4" y="4" width="32" height="32" rx="4" stroke="#C0C0C0" stroke-width="2" fill="none"/>
+                        </svg>
                     </div>
                     <div class="trip-card__body">
-                        <h3 class="trip-card__name">ระยอง</h3>
-                        <p class="trip-card__time">รอบเดินทาง : 17:30</p>
-                        <button class="trip-card__btn" onclick="handleBook('ระยอง')">จอง</button>
-                    </div>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="trip-card">
-                    <div class="trip-card__img-wrapper">
-                        <img src="https://placehold.co/277x169/2C4A6E/white?text=ชลบุรี" alt="ชลบุรี"
-                            class="trip-card__img">
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">ชลบุรี</h3>
-                        <p class="trip-card__time">รอบเดินทาง : 18:00</p>
-                        <button class="trip-card__btn" onclick="handleBook('ชลบุรี')">จอง</button>
+                        <h3 class="trip-card__name" style="color:var(--color-text-tertiary)">กำลังโหลด...</h3>
                     </div>
                 </div>
             </div>
@@ -196,92 +163,18 @@
                     <h2 class="upcoming-section__title">รอบที่ใกล้ออก</h2>
                     <p class="upcoming-section__subtitle">รอบเดินทางที่กำลังจะออกเร็วๆ นี้</p>
                 </div>
-
-                <div class="upcoming-list">
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก 15 นาที</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → พัทยา</span>
-                            <span class="upcoming-row__time">วันนี้ · 17:00 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">3</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn" onclick="handleBook('พัทยา')">จอง</button>
-                    </div>
-
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge">ใกล้ออก 45 นาที</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → ระยอง</span>
-                            <span class="upcoming-row__time">วันนี้ · 17:30 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">8</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn" onclick="handleBook('ระยอง')">จอง</button>
-                    </div>
-
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge">ใกล้ออก 1 ชม.</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → ชลบุรี</span>
-                            <span class="upcoming-row__time">วันนี้ · 18:00 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">12</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn" onclick="handleBook('ชลบุรี')">จอง</button>
-                    </div>
+                <!-- inject โดย main.js -->
+                <div class="upcoming-list" id="upcoming-list">
+                    <p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">
+                        กำลังโหลด...
+                    </p>
                 </div>
             </section>
+
         </section>
     </main>
 
-    <script>
-        // ── Swap Button ──
-        document.getElementById("swap-btn")?.addEventListener("click", () => {
-            const from = document.getElementById("field-from");
-            const to   = document.getElementById("field-to");
-            [from.textContent, to.textContent] = [to.textContent, from.textContent];
-        });
-
-        // ── Today's Date ──
-        document.addEventListener("DOMContentLoaded", () => {
-            const today = new Date().toLocaleDateString("th-TH", {
-                day: "numeric", month: "short", year: "numeric"
-            });
-            const el = document.getElementById("field-date");
-            if (el) el.textContent = today;
-        });
-
-        // ── Search Button ──
-        document.getElementById("search-btn")?.addEventListener("click", () => {
-            const from = document.getElementById("field-from")?.textContent;
-            const to   = document.getElementById("field-to")?.textContent;
-            alert(`🔍 ค้นหา: ${from} → ${to}\n(ฟีเจอร์นี้จะเชื่อมกับ backend ในอนาคต)`);
-        });
-
-        // ── Book Button ── ตรวจ auth ก่อน
-        function handleBook(destination) {
-            // main.js โหลด async ดังนั้น ดู token จาก firebase หรือเช็กจาก localStorage
-            // สำหรับตอนนี้ redirect ไปหน้า login ถ้ายังไม่ login
-            import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js")
-                .then(({ getAuth }) => {
-                    const user = getAuth().currentUser;
-                    if (!user) {
-                        window.location.href = "login.html";
-                    } else {
-                        // TODO: ไปหน้าจองพร้อม destination
-                        alert(`จอง: ${destination}\n(ฟีเจอร์นี้จะเชื่อมกับ backend ในอนาคต)`);
-                    }
-                });
-        }
-        window.handleBook = handleBook;
-    </script>
+    <script type="module" src="main.js"></script>
 
 </body>
 </html>
