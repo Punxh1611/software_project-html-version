@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnSubmit = document.getElementById("btn-submit-booking");
     const step1Form = document.getElementById("step-1-form");
     const step2Payment = document.getElementById("step-2-payment");
-    const promptpayNumber = "1104000104010"; // 🟢 ใส่เบอร์พร้อมเพย์จำลองของคุณตรงนี้ได้เลย
+    const promptpayNumber = "0812345678"; // 🟢 ใส่เบอร์พร้อมเพย์จำลองของคุณตรงนี้ได้เลย
 
     btnSubmit.addEventListener("click", () => {
         // ถ้าระบบอยู่ในหน้าชำระเงินแล้ว แปลว่าลูกค้ากดปุ่ม "ยืนยันการชำระเงิน"
