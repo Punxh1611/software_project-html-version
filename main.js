@@ -344,7 +344,7 @@ function loadMockData() {
         { id: "M3", routeId: "R02", origin: "หมอชิต 2", destination: "หัวหิน", date: todayStr, time: time1, price: 200, availableSeats: 12 },
         { id: "M4", routeId: "R03", origin: "หมอชิต 2", destination: "ระยอง", date: todayStr, time: time2, price: 180, availableSeats: 2 },
         { id: "M5", routeId: "R04", origin: "หมอชิต 2", destination: "อยุธยา", date: todayStr, time: time1, price: 80, availableSeats: 14 },
-        { id: "M6", routeId: "R05", origin: "หมอชิต 2", destination: "นครราชสีมา", date: todayStr, time: time2, price: 250, availableSeats: 8 },
+        { id: "M6", routeId: "R05", origin: "หมอชิต 2", destination: "นครราชสีมา", date: todayStr, time: time2, price: 1, availableSeats: 8 },
         { id: "M7", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: "23:59", price: 150, availableSeats: 14 }
     ];
 
