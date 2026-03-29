@@ -99,10 +99,14 @@ let currentFilter = null;
 
 // 3.0 ข้อมูลเส้นทางจำแนกตามอาคาร
 const destinationsByTerminal = {
-    "A": ["นครสวรรค์", "พิษณุโลก", "กำแพงเพชร", "เพชรบูรณ์", "อุทัยธานี", "นครราชสีมา", "สระบุรี", "ลพบุรี", "ชัยภูมิ", "บุรีรัมย์"],
-    "B": ["อยุธยา", "สุพรรณบุรี", "นครปฐม", "สิงห์บุรี", "ชัยนาท"],
-    "C": ["พัทยา", "สัตหีบ", "ระยอง", "จันทบุรี", "ตราด", "ฉะเชิงเทรา", "ปราจีนบุรี", "สระแก้ว"],
-    "D": ["กาญจนบุรี", "ราชบุรี", "หัวหิน", "อัมพวา", "มหาชัย"]
+    // "A": ["นครสวรรค์", "พิษณุโลก", "กำแพงเพชร", "เพชรบูรณ์", "อุทัยธานี", "นครราชสีมา", "สระบุรี", "ลพบุรี", "ชัยภูมิ", "บุรีรัมย์"],
+    // "B": ["อยุธยา", "สุพรรณบุรี", "นครปฐม", "สิงห์บุรี", "ชัยนาท"],
+    // "C": ["พัทยา", "สัตหีบ", "ระยอง", "จันทบุรี", "ตราด", "ฉะเชิงเทรา", "ปราจีนบุรี", "สระแก้ว"],
+    // "D": ["กาญจนบุรี", "ราชบุรี", "หัวหิน", "อัมพวา", "มหาชัย"]
+    "A" : ["นครราชสีมา"],
+    "B" : ["อยุธยา"],
+    "C": ["พัทยา", "ระยอง",],
+    "D": ["หัวหิน"]
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -307,11 +311,13 @@ document.addEventListener("DOMContentLoaded", () => {
 }); // END DOMContentLoaded
 
 // ==========================================
-// 🚐 ZONE 4: Database Listener & Rendering
+// 🚐 ZONE 4: Database Listener & Rendering (ใช้ Mock Data)
 // ==========================================
 let allTrips = [];
 let showAllTrips = false;
 
+// 🛑 1. คอมเมนต์ปิด Firebase ทิ้งไปเลย เพื่อไม่ให้มันพยายามดึงข้อมูลที่โควต้าเต็มแล้ว
+/*
 onSnapshot(collection(db, "trips"), (querySnapshot) => {
     allTrips = [];
     querySnapshot.forEach((docSnap) => {
@@ -320,6 +326,35 @@ onSnapshot(collection(db, "trips"), (querySnapshot) => {
     renderTrips();
     renderPopularRoutes();
 });
+*/
+
+// 🟢 2. ใส่ข้อมูลจำลอง (Mock Data) เข้าไปแทน
+function loadMockData() {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    const currentHour = now.getHours();
+    const nextHour = (currentHour + 1) % 24;
+    const time1 = `${String(currentHour).padStart(2, '0')}:30`;
+    const time2 = `${String(nextHour).padStart(2, '0')}:00`;
+
+    allTrips = [
+        { id: "M1", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: time1, price: 150, availableSeats: 5 },
+        { id: "M2", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: time2, price: 150, availableSeats: 0 },
+        { id: "M3", routeId: "R02", origin: "หมอชิต 2", destination: "หัวหิน", date: todayStr, time: time1, price: 200, availableSeats: 12 },
+        { id: "M4", routeId: "R03", origin: "หมอชิต 2", destination: "ระยอง", date: todayStr, time: time2, price: 180, availableSeats: 2 },
+        { id: "M5", routeId: "R04", origin: "หมอชิต 2", destination: "อยุธยา", date: todayStr, time: time1, price: 80, availableSeats: 14 },
+        { id: "M6", routeId: "R05", origin: "หมอชิต 2", destination: "นครราชสีมา", date: todayStr, time: time2, price: 250, availableSeats: 8 },
+        { id: "M7", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: "23:59", price: 150, availableSeats: 14 }
+    ];
+
+    renderTrips();
+    renderPopularRoutes();
+    console.log("✅ โหลดข้อมูลจำลอง (Mock Data) สำเร็จ!");
+}
+
+// 🟢 3. เรียกใช้ข้อมูลจำลองทันทีตอนโหลดหน้าเว็บ
+loadMockData();
 
 function calculateArrivalTime(startTime, price) {
     const durationMinutes = Math.floor(price * 1.2);
@@ -695,77 +730,27 @@ function renderPopularRoutes() {
 }
 
 // ==========================================
-// 🎟️ ZONE 5: Booking Modal Logic
+// 🎟️ ZONE 5: Booking Redirect Logic (ระบบใหม่ส่งไปหน้า Booking)
 // ==========================================
-let currentBookingTripId = null;
-let currentBookingSeats = null;
-
-window.bookTicket = async function (tripId, routeId, currentSeats) {
+window.bookTicket = function (tripId, routeId, currentSeats) {
     if (currentSeats <= 0) {
         alert("ขออภัยครับ รถรอบนี้ที่นั่งเต็มแล้ว 😭");
         return;
     }
 
-    currentBookingTripId = tripId;
-    currentBookingSeats = currentSeats;
-
-    const stopSelect = document.getElementById("modal-stop-select");
-    const priceShow = document.getElementById("modal-price-show");
-
-    stopSelect.innerHTML = `<option value="">กำลังโหลดจุดจอด...</option>`;
-    document.getElementById("booking-modal").classList.add("active");
-
-    try {
-        const routeDoc = await getDoc(doc(db, "routes", routeId));
-        stopSelect.innerHTML = "";
-
-        if (routeDoc.exists() && routeDoc.data().stops) {
-            const routeInfo = routeDoc.data();
-            routeInfo.stops.forEach((stop, index) => {
-                const isSelected = index === routeInfo.stops.length - 1 ? "selected" : "";
-                stopSelect.innerHTML += `<option value="${stop.price}" ${isSelected}>ลงที่: ${stop.name}</option>`;
-            });
-            priceShow.innerText = routeInfo.stops[routeInfo.stops.length - 1].price;
-        } else {
-            stopSelect.innerHTML = `<option value="150">ปลายทาง</option>`;
-            priceShow.innerText = "150";
-        }
-    } catch (error) {
-        console.error("โหลดจุดจอดไม่สำเร็จ:", error);
-        stopSelect.innerHTML = `<option value="150">เกิดข้อผิดพลาดในการโหลดจุดจอด</option>`;
+    // หาข้อมูลรอบรถที่ลูกค้ากดเลือกจาก Mock Data
+    const selectedTrip = allTrips.find(t => t.id === tripId);
+    if (!selectedTrip) {
+        alert("เกิดข้อผิดพลาด ไม่พบข้อมูลรอบรถครับ");
+        return;
     }
+
+    // บันทึกข้อมูลรถลงในหน่วยความจำของเบราว์เซอร์ชั่วคราว (LocalStorage)
+    localStorage.setItem("currentBooking", JSON.stringify(selectedTrip));
+
+    // เด้งไปที่หน้าจองตั๋ว
+    window.location.href = "booking.html";
 };
-
-document.getElementById("modal-stop-select")?.addEventListener("change", (e) => {
-    document.getElementById("modal-price-show").innerText = e.target.value;
-});
-
-window.closeBookingModal = function () {
-    document.getElementById("booking-modal").classList.remove("active");
-    currentBookingTripId = null;
-};
-
-document.getElementById("btn-confirm-booking")?.addEventListener("click", async () => {
-    if (!currentBookingTripId) return;
-
-    const stopSelect = document.getElementById("modal-stop-select");
-    const selectedStopName = stopSelect.options[stopSelect.selectedIndex].text;
-    const finalPrice = stopSelect.value;
-
-    try {
-        const tripRef = doc(db, "trips", currentBookingTripId);
-        await updateDoc(tripRef, {
-            availableSeats: currentBookingSeats - 1
-        });
-
-        alert(`🎉 จองตั๋วสำเร็จ!\n${selectedStopName}\nยอดชำระเงิน: ฿${finalPrice}`);
-        window.closeBookingModal();
-
-    } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการจอง:", error);
-        alert("❌ ระบบขัดข้อง: " + error.message);
-    }
-});
 
 // ==========================================
 // 🛠️ ZONE 6: System Utilities (Live Sync & Mock Data)
@@ -777,80 +762,4 @@ setInterval(() => {
     }
 }, 60000);
 
-// // ปุ่มเสกข้อมูล (ซ่อนไว้ใช้ทดสอบ)
-// setTimeout(() => {
-//     const btnMock = document.createElement("button");
-//     btnMock.innerText = "📅 ล้างไพ่ & อัปเดตตารางรถใหม่";
-//     btnMock.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:9999; background:#8E44AD; color:white; padding:12px 20px; border-radius:8px; cursor:pointer; font-weight:bold; border:none; box-shadow:0 4px 10px rgba(0,0,0,0.3);";
-//     document.body.appendChild(btnMock);
 
-//     btnMock.addEventListener("click", async () => {
-//         const confirmClear = confirm("🚨 คำเตือน: ระบบจะทำการ 'ลบข้อมูลรอบรถ (Trips) เก่าทั้งหมด' และสร้างตารางเวลาใหม่แบบสมจริง คุณแน่ใจหรือไม่?");
-//         if (!confirmClear) return;
-
-//         btnMock.innerText = "🗑️ กำลังล้างข้อมูลเก่า...";
-//         btnMock.disabled = true;
-
-//         try {
-//             const tripsRef = collection(db, "trips");
-//             const oldTripsSnap = await getDocs(tripsRef);
-//             for (const tripDoc of oldTripsSnap.docs) {
-//                 await deleteDoc(doc(db, "trips", tripDoc.id));
-//             }
-
-//             btnMock.innerText = "⏳ กำลังสร้างตารางใหม่...";
-//             const routesSnap = await getDocs(collection(db, "routes"));
-//             const allRoutes = [];
-//             routesSnap.forEach(d => allRoutes.push(d.data()));
-
-//             const now = new Date();
-//             let count = 0;
-
-//             for (let i = 0; i <= 7; i++) {
-//                 const targetDate = new Date(now);
-//                 targetDate.setDate(now.getDate() + i);
-//                 const dateStr = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-
-//                 for (const route of allRoutes) {
-//                     let routePrice = 150;
-//                     if(route.stops && route.stops.length > 0) {
-//                         routePrice = route.stops[route.stops.length - 1].price;
-//                     }
-
-//                     let baseHours = [];
-//                     if (routePrice <= 100) baseHours = ["06", "08", "10", "12", "14", "16", "18"];
-//                     else if (routePrice <= 200) baseHours = ["07", "10", "13", "16", "19"];
-//                     else baseHours = ["06", "12", "18"];
-
-//                     const times = baseHours.map(hour => {
-//                         const mins = ["00", "15", "30"][Math.floor(Math.random() * 3)];
-//                         return `${hour}:${mins}`;
-//                     });
-
-//                     for (const t of times) {
-//                         await addDoc(tripsRef, {
-//                             routeId: route.routeId,
-//                             origin: route.origin,
-//                             destination: route.destination,
-//                             date: dateStr,
-//                             time: t,
-//                             totalSeats: 14,
-//                             availableSeats: Math.floor(Math.random() * 14) + 1,
-//                             status: "waiting",
-//                             price: routePrice
-//                         });
-//                         count++;
-//                     }
-//                 }
-//             }
-//             alert(`✅ ล้างข้อมูลเก่า และสร้างตารางใหม่สำเร็จ! (${count} รอบ)\nหน้าเว็บจะอัปเดตอัตโนมัติครับ`);
-//             btnMock.remove();
-
-//         } catch (error) {
-//             console.error(error);
-//             alert("❌ เกิดข้อผิดพลาด: " + error.message);
-//             btnMock.innerText = "📅 ลองใหม่";
-//             btnMock.disabled = false;
-//         }
-//     });
-// }, 1000);

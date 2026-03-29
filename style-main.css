@@ -722,3 +722,292 @@ a { text-decoration: none; }
         grid-template-columns: 1fr; /* จอเล็กมากให้เหลือ 1 คอลัมน์ */
     }
 }
+
+/* ─────────────────────────────
+   BOOKING PAGE (CHECKOUT)
+───────────────────────────── */
+.booking-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.booking-title {
+    font-family: var(--font-ui);
+    font-size: 24px;
+    margin-bottom: 24px;
+    color: var(--color-brand);
+}
+
+.booking-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.booking-form-card, .booking-summary-card {
+    background: white;
+    padding: 24px;
+    border-radius: var(--radius-card);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid var(--color-border);
+}
+
+.booking-form-card {
+    flex: 2; /* ให้ฝั่งฟอร์มกว้างกว่า */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.booking-summary-card {
+    flex: 1; /* ฝั่งสรุปเล็กกว่า */
+    position: sticky;
+    top: 24px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-family: var(--font-thai);
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+}
+
+.form-input {
+    padding: 12px 16px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-family: var(--font-thai);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    border-color: var(--blue-mid);
+}
+
+.summary-detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-family: var(--font-thai);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.summary-value {
+    color: var(--color-black);
+    font-weight: 500;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed #ccc;
+    font-family: var(--font-thai);
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.total-price {
+    font-size: 24px;
+    color: #E8520A;
+}
+
+.btn-confirm-checkout {
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    background: var(--blue-mid);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-thai);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-confirm-checkout:hover {
+    background: var(--blue-dark);
+}
+
+.btn-cancel-checkout {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: none;
+    font-family: var(--font-thai);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-cancel-checkout:hover {
+    color: var(--color-black);
+    text-decoration: underline;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .booking-layout {
+        flex-direction: column; /* มือถือให้เรียงบนลงล่าง */
+    }
+    .booking-form-card, .booking-summary-card {
+        width: 100%;
+        flex: none;
+    }
+}
+
+/* ─────────────────────────────
+   E-TICKET DESIGN
+───────────────────────────── */
+.e-ticket {
+    background: white;
+    max-width: 420px;
+    margin: 0 auto;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #eee;
+}
+
+.e-ticket__header {
+    background: var(--blue-dark);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.e-ticket__brand {
+    font-family: var(--font-logo);
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+
+.e-ticket__status {
+    background: #FFF3E0;
+    color: #E65100;
+    font-size: 12px;
+    font-family: var(--font-thai);
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.e-ticket__body {
+    padding: 24px;
+    background: white;
+}
+
+.ticket-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.ticket-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ticket-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-family: var(--font-thai);
+}
+
+.ticket-value {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--color-black);
+    font-family: var(--font-thai);
+}
+
+.ticket-route {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.route-point {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.route-time {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--color-brand);
+}
+
+.route-place {
+    font-size: 14px;
+    font-family: var(--font-thai);
+    font-weight: 600;
+}
+
+.route-icon {
+    color: var(--blue-mid);
+    font-size: 20px;
+}
+
+.e-ticket__footer {
+    padding: 20px 24px;
+    background: white;
+    border-top: 2px dashed #ddd; /* รอยปรุ */
+    text-align: center;
+    position: relative;
+}
+
+/* รอยแหว่งด้านข้างของตั๋ว (ซ้าย-ขวา) */
+.e-ticket__footer::before,
+.e-ticket__footer::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    width: 24px;
+    height: 24px;
+    background: var(--color-bg); /* สีเดียวกับพื้นหลังเว็บ */
+    border-radius: 50%;
+    border: 1px solid #eee;
+}
+
+.e-ticket__footer::before {
+    left: -12px;
+    border-left-color: transparent;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+.e-ticket__footer::after {
+    right: -12px;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
