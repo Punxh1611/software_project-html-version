@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ยืนยันการจองตั๋ว - VANVAN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-main.css">
+</head>
+<body style="background: var(--color-bg);">
+
+    <header class="navbar" style="justify-content: center;">
+        <div class="logo">
+            <span class="van-text" style="cursor: pointer;" onclick="window.location.href='index.html'">VANVAN</span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="booking-container">
+            <h2 class="booking-title">📝 กรอกข้อมูลผู้โดยสาร</h2>
+            
+            <div class="booking-layout">
+                <div class="booking-left-panel" style="flex: 2; display: flex; flex-direction: column; gap: 20px;">
+                    
+                    <div class="booking-form-card" id="step-1-form">
+                        <div class="form-group">
+                            <label class="form-label">ชื่อ - นามสกุล ผู้เดินทาง</label>
+                            <input type="text" id="pass-name" class="form-input" placeholder="ระบุชื่อและนามสกุล" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">เบอร์โทรศัพท์ติดต่อ</label>
+                            <input type="tel" id="pass-phone" class="form-input" placeholder="08X-XXX-XXXX" maxlength="10" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">เลือกลงที่จุดจอด</label>
+                            <select id="pass-stop" class="form-input"></select>
+                        </div>
+                    </div>
+
+                    <div class="booking-form-card" id="step-2-payment" style="display: none; text-align: center; padding: 40px 24px;">
+                        <h3 style="font-family: var(--font-thai); color: var(--color-brand); margin-bottom: 10px;">📱 สแกน QR Code เพื่อชำระเงิน</h3>
+                        <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 24px;">รองรับ Mobile Banking ทุกธนาคาร</p>
+                        
+                        <div class="qr-container">
+                            <img id="qr-image" src="" alt="PromptPay QR Code" style="width: 200px; height: 200px; border: 4px solid #1B4F72; border-radius: 12px; padding: 10px;">
+                        </div>
+                        
+                        <div style="margin-top: 16px; font-size: 18px; font-weight: bold; color: #E8520A;">
+                            ยอดโอน: ฿<span id="pay-amount">0.00</span>
+                        </div>
+
+                        <div class="upload-slip-box" style="margin-top: 32px; padding-top: 24px; border-top: 1px dashed #ddd;">
+                            <label for="slip-upload" class="form-label" style="display: block; margin-bottom: 12px;">แนบสลิปหลักฐานการโอนเงิน</label>
+                            <input type="file" id="slip-upload" accept="image/*" class="form-input" style="cursor: pointer;">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="booking-summary-card">
+                    <h3 style="font-family: var(--font-thai); font-size: 16px; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px;">📌 สรุปการเดินทาง</h3>
+                    
+                    <div class="summary-detail">
+                        <span class="summary-label">เส้นทาง</span>
+                        <span class="summary-value" id="sum-route">กำลังโหลด...</span>
+                    </div>
+                    <div class="summary-detail">
+                        <span class="summary-label">วันที่</span>
+                        <span class="summary-value" id="sum-date">กำลังโหลด...</span>
+                    </div>
+                    <div class="summary-detail">
+                        <span class="summary-label">เวลาออกรถ</span>
+                        <span class="summary-value" id="sum-time" style="color: var(--blue-mid); font-weight: bold;">กำลังโหลด...</span>
+                    </div>
+                    
+                    <div class="summary-total">
+                        <span>ยอดชำระสุทธิ</span>
+                        <span class="total-price">฿<span id="sum-price">0</span></span>
+                    </div>
+
+                    <button class="btn-confirm-checkout" id="btn-submit-booking">
+                        ดำเนินการชำระเงิน ➔
+                    </button>
+                    <button class="btn-cancel-checkout" onclick="window.location.href='index.html'">
+                        ย้อนกลับ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-3-ticket" style="display: none; width: 100%; animation: fadeIn 0.5s;">
+                <h2 style="text-align: center; color: #2E7D32; margin-bottom: 20px;">🎉 จองตั๋วสำเร็จ!</h2>
+                
+                <div class="e-ticket">
+                    <div class="e-ticket__header">
+                        <span class="e-ticket__brand">VANVAN Express</span>
+                        <span class="e-ticket__status">รอตรวจสอบสลิป</span>
+                    </div>
+                    
+                    <div class="e-ticket__body">
+                        <div class="ticket-row">
+                            <div class="ticket-col">
+                                <span class="ticket-label">ผู้โดยสาร</span>
+                                <span class="ticket-value" id="ticket-name">กำลังโหลด...</span>
+                            </div>
+                            <div class="ticket-col" style="text-align: right;">
+                                <span class="ticket-label">รหัสการจอง (Booking Ref)</span>
+                                <span class="ticket-value" id="ticket-ref" style="color: var(--blue-mid);">VAN-XXXXXX</span>
+                            </div>
+                        </div>
+
+                        <div class="ticket-route">
+                            <div class="route-point">
+                                <div class="route-time" id="ticket-time">00:00</div>
+                                <div class="route-place" id="ticket-origin">ต้นทาง</div>
+                            </div>
+                            <div class="route-icon">➔</div>
+                            <div class="route-point" style="text-align: right;">
+                                <div class="route-time" style="color: transparent;">00:00</div>
+                                <div class="route-place" id="ticket-dest">ปลายทาง</div>
+                            </div>
+                        </div>
+
+                        <div class="ticket-row" style="margin-top: 16px;">
+                            <div class="ticket-col">
+                                <span class="ticket-label">วันที่เดินทาง</span>
+                                <span class="ticket-value" id="ticket-date">DD/MM/YYYY</span>
+                            </div>
+                            <div class="ticket-col" style="text-align: right;">
+                                <span class="ticket-label">จุดลงรถ</span>
+                                <span class="ticket-value" id="ticket-stop">จุดจอด...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="e-ticket__footer">
+                        <p style="font-size: 13px; color: #757575; margin-bottom: 12px;">กรุณาแสดงตั๋วนี้พร้อมบัตรประชาชนก่อนขึ้นรถ</p>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/UPC-A-036000291452.svg" alt="Barcode" style="height: 50px; opacity: 0.8;">
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn-confirm-checkout" style="width: auto; padding: 12px 32px;" onclick="window.location.href='index.html'">
+                        กลับสู่หน้าหลัก
+                    </button>
+                </div>
+            </div>
+    </main>
+
+    <script src="booking.js" type="module"></script>
+</body>
+</html>
