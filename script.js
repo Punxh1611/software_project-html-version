@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { toast } from "./Toast.js";
+import { toast } from "./toast.js";
 
  const firebaseConfig = {
     apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
@@ -59,6 +59,9 @@ document.querySelector(".btn-signin")?.addEventListener("click", async () => {
 
         if (role === "admin") {
             window.location.href = "/admin/index.html";
+        }
+        else if (role === "driver") {
+            window.location.href = "/driver/index.html";
         } else {
             window.location.href = "/index.html";
         }

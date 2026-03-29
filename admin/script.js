@@ -352,6 +352,7 @@ function openCreateScheduleModal() {
       });
       toast('สร้างรอบเดินทางสำเร็จ!', 'success');
       modal.remove();
+      invalidateSchedulesCache(); // ล้าง cache เพื่อให้โหลดข้อมูลใหม่
       fetchAndRenderSchedules();
     } catch (error) {
       console.error(error);
@@ -360,70 +361,207 @@ function openCreateScheduleModal() {
   });
 }
 
+// เก็บข้อมูล trips ทั้งหมดและ routesMap ไว้ใน module-level
+let allTripsData = [];
+let allRoutesMap = {};
+let selectedScheduleDate = null;
+
+// ─── Cache layer ───────────────────────────────────────────
+let _tripsCache  = null;           // array ของ trip objects
+let _routesCache = null;           // object ของ routesMap
+let _cacheTime   = 0;              // timestamp ที่โหลดล่าสุด
+const CACHE_TTL  = 5 * 60 * 1000; // 5 นาที (ms)
+
+function invalidateSchedulesCache() {
+  _tripsCache  = null;
+  _routesCache = null;
+  _cacheTime   = 0;
+}
+// ───────────────────────────────────────────────────────────
+
 async function fetchAndRenderSchedules() {
   const schedulesList = document.getElementById('schedules-list');
   if (!schedulesList) return;
 
   try {
-    const querySnapshotTrips = await getDocs(collection(db, "trips"));
-    const routesSnapshot = await getDocs(collection(db, "routes"));
-    const routesMap = {};
-    routesSnapshot.forEach(d => {
-      routesMap[d.data().routeId] = { origin: d.data().origin, destination: d.data().destination };
-    });
+    const now     = Date.now();
+    const isFresh = _tripsCache && _routesCache && (now - _cacheTime < CACHE_TTL);
 
-    schedulesList.innerHTML = '';
+    if (isFresh) {
+      // ✅ ใช้ cache — ไม่อ่าน Firestore เลย
+      console.log('[Schedules] using cache, skipping Firestore reads');
+      allTripsData = _tripsCache;
+      allRoutesMap = _routesCache;
+    } else {
+      // 🔄 cache หมดอายุหรือยังไม่มี — อ่าน Firestore
+      console.log('[Schedules] cache miss — fetching from Firestore');
+      schedulesList.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--color-text-soft);">กำลังโหลดข้อมูลรอบรถ...</p>';
 
-    if (querySnapshotTrips.empty) {
+      const [tripsSnapshot, routesSnapshot] = await Promise.all([
+        getDocs(collection(db, "trips")),
+        getDocs(collection(db, "routes")),
+      ]);
+
+      const routesMap = {};
+      routesSnapshot.forEach(d => {
+        routesMap[d.data().routeId] = { origin: d.data().origin, destination: d.data().destination };
+      });
+
+      const tripsArr = [];
+      tripsSnapshot.forEach(d => tripsArr.push({ docId: d.id, ...d.data() }));
+
+      // บันทึกลง cache
+      _tripsCache  = tripsArr;
+      _routesCache = routesMap;
+      _cacheTime   = now;
+
+      allTripsData = _tripsCache;
+      allRoutesMap = _routesCache;
+    }
+
+    if (allTripsData.length === 0) {
       schedulesList.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--color-text-soft);">ไม่พบข้อมูลรอบรถ</p>';
+      renderDayFilterButtons([]);
       return;
     }
 
-    querySnapshotTrips.forEach(d => {
-      const data = d.data();
-      const routeInfo = routesMap[data.routeId] || { origin: 'Unknown', destination: 'Unknown Route' };
-      const tripDate = new Date(data.date);
-      const day = tripDate.getDate();
-      const monthShort = tripDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    // รวบรวมวันที่ unique แล้วเรียงจากน้อยไปมาก
+    const uniqueDates = [...new Set(allTripsData.map(t => t.date))].sort();
 
-      let statusBadge = '';
-      if (data.status === 'waiting') statusBadge = '<span class="badge loading">Waiting</span>';
-      else if (data.status === 'on-way') statusBadge = '<span class="badge warning">On-Way</span>';
-      else if (data.status === 'completed') statusBadge = '<span class="badge up">Completed</span>';
+    // ตั้งค่าวันที่เริ่มต้น = วันแรกที่มีข้อมูล
+    if (!selectedScheduleDate || !uniqueDates.includes(selectedScheduleDate)) {
+      selectedScheduleDate = uniqueDates[0];
+    }
 
-      const bookedSeats = (data.totalSeats || 0) - (data.availableSeats || 0);
+    renderDayFilterButtons(uniqueDates);
+    renderSchedulesByDate(selectedScheduleDate);
 
-      const div = document.createElement('div');
-      div.className = 'card flex-between';
-      div.style.cursor = 'pointer';
-      div.innerHTML = `
-        <div class="gap-2">
-          <div style="background:var(--color-bg-main); padding:0.75rem 1rem; border-radius:8px; text-align:center;">
-            <small style="color:var(--color-text-soft);">${monthShort}</small><br><b style="font-size:1.25rem;">${day}</b>
-          </div>
-          <div>
-            ${statusBadge}
-            <h4 style="margin: 4px 0 2px 0;">${routeInfo.origin} &rarr; ${routeInfo.destination}</h4>
-            <small style="color:var(--color-text-soft);">${data.time || 'HH:MM'} | ${data.vanPlate || 'Unassigned Van'}</small>
-            <br><small style="color:var(--color-blue-dark);">จองแล้ว: ${bookedSeats}/${data.totalSeats || 0} ที่นั่ง</small>
-          </div>
-        </div>
-        <i data-lucide="chevron-right" style="color:var(--color-text-soft);"></i>
-      `;
-
-      div.addEventListener('click', () => {
-        document.querySelectorAll('#schedules-list .card').forEach(c => c.style.borderColor = '');
-        div.style.borderColor = 'var(--color-blue-mid)';
-        renderSeatMap(data.totalSeats || 0, bookedSeats);
-      });
-
-      schedulesList.appendChild(div);
-    });
-    if (window.lucide) window.lucide.createIcons();
   } catch (error) {
     console.error("Error loading schedules: ", error);
     schedulesList.innerHTML = '<p style="text-align:center; color:var(--color-danger);">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
   }
+}
+
+function renderDayFilterButtons(uniqueDates) {
+  const bar = document.getElementById('day-filter-bar');
+  if (!bar) return;
+
+  if (uniqueDates.length === 0) {
+    bar.innerHTML = '<span style="font-size:13px; color:var(--color-text-soft);">ไม่มีข้อมูลวันที่</span>';
+    return;
+  }
+
+  const label = `<span style="font-size:13px; color:var(--color-text-soft); margin-right:4px; white-space:nowrap;"><i data-lucide="calendar" style="width:14px; height:14px; vertical-align:middle;"></i> เลือกวัน:</span>`;
+
+  const buttons = uniqueDates.map(dateStr => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const day = d.getDate();
+    const monthShort = d.toLocaleString('th-TH', { month: 'short' });
+    const isActive = dateStr === selectedScheduleDate;
+    const tripCount = allTripsData.filter(t => t.date === dateStr).length;
+
+    return `
+      <button
+        data-date="${dateStr}"
+        onclick="window.selectScheduleDate('${dateStr}')"
+        style="
+          display:flex; flex-direction:column; align-items:center;
+          padding:6px 14px; border-radius:10px; cursor:pointer; border:1.5px solid ${isActive ? 'var(--color-blue-mid)' : 'var(--color-border-light)'};
+          background:${isActive ? 'var(--color-blue-mid)' : 'white'};
+          color:${isActive ? 'white' : 'var(--color-text-main)'};
+          font-weight:${isActive ? 'bold' : 'normal'};
+          transition: all 0.15s;
+          min-width:52px;
+        "
+      >
+        <span style="font-size:10px; opacity:0.8;">${monthShort}</span>
+        <span style="font-size:18px; font-weight:bold; line-height:1.2;">${day}</span>
+        <span style="font-size:10px; opacity:0.75;">${tripCount} รอบ</span>
+      </button>
+    `;
+  }).join('');
+
+  bar.innerHTML = label + buttons;
+  if (window.lucide) window.lucide.createIcons();
+}
+
+window.selectScheduleDate = function(dateStr) {
+  selectedScheduleDate = dateStr;
+  renderDayFilterButtons([...new Set(allTripsData.map(t => t.date))].sort());
+  renderSchedulesByDate(dateStr);
+};
+
+function renderSchedulesByDate(dateStr) {
+  const schedulesList = document.getElementById('schedules-list');
+  if (!schedulesList) return;
+
+  // reset seat panel
+  const seatPanel = document.getElementById('seat-panel');
+  if (seatPanel) {
+    seatPanel.innerHTML = `
+      <i data-lucide="armchair" style="width:48px; height:48px; opacity:0.2; margin-bottom:1rem;"></i>
+      <p style="font-size:13px; opacity:0.5;">เลือกรอบเดินทางเพื่อดูแผนผังที่นั่ง</p>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  const filtered = allTripsData.filter(t => t.date === dateStr);
+  // เรียงตามเวลา
+  filtered.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+  schedulesList.innerHTML = '';
+
+  if (filtered.length === 0) {
+    schedulesList.innerHTML = `<p style="text-align:center; padding:2rem; color:var(--color-text-soft);">ไม่มีรอบเดินทางในวันนี้</p>`;
+    return;
+  }
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const dateLabel = d.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const headerDiv = document.createElement('div');
+  headerDiv.innerHTML = `<p style="font-size:13px; color:var(--color-text-soft); padding:0 0.25rem;">${dateLabel} — ${filtered.length} รอบ</p>`;
+  schedulesList.appendChild(headerDiv);
+
+  filtered.forEach(data => {
+    const routeInfo = allRoutesMap[data.routeId] || { origin: data.origin || 'Unknown', destination: data.destination || 'Unknown' };
+    const tripDate = new Date(data.date + 'T00:00:00');
+    const day = tripDate.getDate();
+    const monthShort = tripDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+
+    let statusBadge = '';
+    if (data.status === 'waiting') statusBadge = '<span class="badge loading">Waiting</span>';
+    else if (data.status === 'on-way') statusBadge = '<span class="badge warning">On-Way</span>';
+    else if (data.status === 'completed') statusBadge = '<span class="badge up">Completed</span>';
+
+    const bookedSeats = (data.totalSeats || 0) - (data.availableSeats || 0);
+
+    const div = document.createElement('div');
+    div.className = 'card flex-between';
+    div.style.cursor = 'pointer';
+    div.innerHTML = `
+      <div class="gap-2">
+        <div style="background:var(--color-bg-main); padding:0.75rem 1rem; border-radius:8px; text-align:center; min-width:52px;">
+          <small style="color:var(--color-text-soft);">${monthShort}</small><br><b style="font-size:1.25rem;">${day}</b>
+        </div>
+        <div>
+          ${statusBadge}
+          <h4 style="margin: 4px 0 2px 0;">${routeInfo.origin} &rarr; ${routeInfo.destination}</h4>
+          <small style="color:var(--color-text-soft);">${data.time || 'HH:MM'} | ${data.vanPlate || 'Unassigned Van'}</small>
+          <br><small style="color:var(--color-blue-dark);">จองแล้ว: ${bookedSeats}/${data.totalSeats || 0} ที่นั่ง</small>
+        </div>
+      </div>
+      <i data-lucide="chevron-right" style="color:var(--color-text-soft);"></i>
+    `;
+
+    div.addEventListener('click', () => {
+      document.querySelectorAll('#schedules-list .card').forEach(c => c.style.borderColor = '');
+      div.style.borderColor = 'var(--color-blue-mid)';
+      renderSeatMap(data.totalSeats || 0, bookedSeats);
+    });
+
+    schedulesList.appendChild(div);
+  });
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderSeatMap(totalSeats, bookedSeats) {
@@ -892,6 +1030,10 @@ function getSchedulesHtml() {
       <div class="flex-between">
         <h3>Trip Schedules</h3>
         <button class="btn-primary" id="btn-create-schedule"><i data-lucide="plus"></i> Create Schedule</button>
+      </div>
+      <div id="day-filter-bar" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; padding: 0.75rem 1rem; background:var(--color-bg-main); border-radius:12px; border:1px solid var(--color-border-light);">
+        <span style="font-size:13px; color:var(--color-text-soft); margin-right:4px;"><i data-lucide="calendar" style="width:14px; height:14px; vertical-align:middle;"></i> เลือกวัน:</span>
+        <p style="font-size:13px; color:var(--color-text-soft);">กำลังโหลด...</p>
       </div>
       <div class="grid-2">
         <div id="schedules-list" style="display:flex; flex-direction:column; gap:1rem; height: 600px; overflow-y: auto; padding-right: 10px;">

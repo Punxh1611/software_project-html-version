@@ -11,6 +11,76 @@
         href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
+    <style>
+      /* ── Hero Dropdown ── */
+      .hero__field--select { position: relative; }
+      .hero__chevron { margin-left: auto; opacity: .5; flex-shrink: 0; }
+      .hero__dropdown {
+        display: none; position: absolute; top: calc(100% + 6px); left: 0;
+        min-width: 180px; background: #fff; border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.18); z-index: 200;
+        max-height: 220px; overflow-y: auto; padding: 6px 0;
+      }
+      .hero__dropdown.open { display: block; }
+      .hero__dropdown-item {
+        padding: 10px 16px; font-size: 14px; cursor: pointer; color: #1a2a3a;
+        transition: background .12s;
+      }
+      .hero__dropdown-item:hover { background: #f0f6ff; }
+
+      /* ── Search Results Section ── */
+      .search-results {
+        max-width: 960px; margin: 2rem auto; padding: 0 1.5rem;
+      }
+      .search-results__header { margin-bottom: 1.25rem; }
+      .search-results__title { font-size: 1.4rem; font-weight: 700; color: #1a2a3a; margin: 0 0 .25rem; }
+      .search-results__subtitle { font-size: .9rem; color: #6b7a99; margin: 0; }
+      .search-results__list { display: flex; flex-direction: column; gap: 1rem; }
+
+      /* ── Result Card ── */
+      .result-card {
+        display: flex; background: #fff; border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.08); overflow: hidden;
+        transition: box-shadow .2s;
+      }
+      .result-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.13); }
+      .result-card__img-wrap { width: 140px; flex-shrink: 0; }
+      .result-card__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .result-card__body { flex: 1; padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
+      .result-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+      .result-card__route { font-size: 1.05rem; font-weight: 700; color: #1a2a3a; margin: 0 0 .2rem; }
+      .result-card__time { font-size: .85rem; color: #6b7a99; margin: 0; }
+      .result-card__countdown {
+        font-size: .78rem; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+        background: #e8f0fe; color: #2563eb; white-space: nowrap; flex-shrink: 0;
+      }
+      .result-card__countdown--soon { background: #fef2f2; color: #dc2626; }
+      .result-card__bottom { display: flex; justify-content: space-between; align-items: center; }
+      .result-card__meta { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+      .result-card__price { font-size: 1.2rem; font-weight: 800; color: #2E86C1; }
+      .result-card__seats { font-size: .82rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #e8faf0; color: #16a34a; }
+      .result-card__seats--low { background: #fff7ed; color: #ea580c; }
+      .result-card__seats--full { background: #fef2f2; color: #dc2626; }
+      .result-card__booked { font-size: .8rem; color: #9ca3af; }
+      .result-card__btn {
+        padding: 8px 22px; border-radius: 10px; border: none;
+        background: #2E86C1; color: #fff; font-weight: 700; font-size: .9rem;
+        cursor: pointer; transition: background .15s; white-space: nowrap;
+      }
+      .result-card__btn:hover { background: #1B4F72; }
+      .result-card__btn:disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+
+      /* ── Search empty ── */
+      .search-empty { display: flex; flex-direction: column; align-items: center; padding: 3rem; color: #9ca3af; text-align: center; }
+      .search-empty p { font-size: 1rem; font-weight: 600; margin: 0 0 .25rem; }
+      .search-empty small { font-size: .85rem; }
+
+      @media (max-width: 600px) {
+        .result-card__img-wrap { width: 90px; }
+        .result-card__body { padding: .75rem 1rem; }
+        .result-card__price { font-size: 1rem; }
+      }
+    </style>
     <script src="./main.js" type="module"></script>
 </head>
 
@@ -73,59 +143,69 @@
         <div class="hero__overlay"></div>
         <div class="hero__search-box">
             <div class="hero__search-row">
-                <!-- จาก -->
-                <div class="hero__field">
+
+                <!-- จาก — dropdown -->
+                <div class="hero__field hero__field--select" id="field-origin">
                     <span class="hero__field-label">จาก</span>
-                    <div class="hero__field-input">
+                    <div class="hero__field-input" id="origin-display">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor"
                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <div class="hero__field-content">
-                            <span class="hero__field-city">กรุงเทพ</span>
-                            <span class="hero__field-code">(BKKA)</span>
+                            <span class="hero__field-city" id="origin-city">กรุงเทพ</span>
+                            <span class="hero__field-code" id="origin-code"></span>
                         </div>
+                        <svg class="hero__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </div>
+                    <div class="hero__dropdown" id="origin-dropdown"></div>
                 </div>
 
                 <!-- Swap -->
-                <button class="hero__swap-btn">
+                <button class="hero__swap-btn" id="swap-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
 
-                <!-- ถึง -->
-                <div class="hero__field">
+                <!-- ถึง — dropdown -->
+                <div class="hero__field hero__field--select" id="field-dest">
                     <span class="hero__field-label">ถึง</span>
-                    <div class="hero__field-input">
+                    <div class="hero__field-input" id="dest-display">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <path d="M21 3L3 10.5l7.5 3L21 3zM10.5 13.5L14 21l3-7.5" stroke="currentColor"
                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <div class="hero__field-content">
-                            <span class="hero__field-city">ไทเป</span>
-                            <span class="hero__field-code">(TPE)</span>
+                            <span class="hero__field-city" id="dest-city">พัทยา</span>
+                            <span class="hero__field-code" id="dest-code"></span>
                         </div>
+                        <svg class="hero__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </div>
+                    <div class="hero__dropdown" id="dest-dropdown"></div>
                 </div>
 
                 <!-- วันออกเดินทาง -->
-                <div class="hero__field">
+                <div class="hero__field" style="cursor:pointer;" id="field-date">
                     <span class="hero__field-label">วันออกเดินทาง</span>
                     <div class="hero__field-input">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8" />
-                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" />
+                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                         </svg>
-                        <span class="hero__field-city">15 มี.ค. 2026</span>
+                        <span class="hero__field-city" id="depart-date-label">วันนี้</span>
                     </div>
+                    <!-- input ซ่อนไว้ จะเรียกผ่าน showPicker() -->
+                    <input type="date" id="depart-date-input" style="visibility:hidden;position:absolute;width:0;height:0;">
                 </div>
 
                 <!-- โป-กลับ -->
-                <div class="hero__field">
+                <div class="hero__field" id="field-return">
                     <div class="hero__roundtrip-label">
                         <input type="checkbox" id="roundtrip" class="hero__checkbox">
                         <label for="roundtrip" class="hero__field-label">โป-กลับ</label>
@@ -133,15 +213,15 @@
                     <div class="hero__field-input hero__field-input--muted">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8" />
-                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" />
+                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                         </svg>
-                        <span class="hero__field-city hero__field-city--muted">17 มี.ค. 2026</span>
+                        <span class="hero__field-city hero__field-city--muted" id="return-date-label">เลือกวัน</span>
                     </div>
+                    <input type="date" id="return-date-input" disabled style="visibility:hidden;position:absolute;width:0;height:0;">
                 </div>
 
                 <!-- Search button -->
-                <button class="hero__search-btn">
+                <button class="hero__search-btn" id="search-btn">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="7" stroke="white" stroke-width="2.2" />
                         <path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round" />
@@ -149,6 +229,15 @@
                 </button>
             </div>
         </div>
+    </section>
+
+    <!-- Search Results Section (hidden by default) -->
+    <section class="search-results" id="search-results" style="display:none;">
+        <div class="search-results__header">
+            <h2 class="search-results__title" id="search-results-title">ผลการค้นหา</h2>
+            <p class="search-results__subtitle" id="search-results-subtitle"></p>
+        </div>
+        <div class="search-results__list" id="search-results-list"></div>
     </section>
 
     <!-- Main Content -->
@@ -159,56 +248,11 @@
                 <p class="section-card__subtitle">คนจองมากที่สุด</p>
             </div>
 
-            <div class="trip-grid">
-                <!-- Card 1 — with real image + booking -->
-                <div class="trip-card trip-card--featured">
-                    <div class="trip-card__img-wrapper">
-                        <img src="https://placehold.co/277x169/4A90D9/white?text=พัทยา" alt="พัทยา"
-                            class="trip-card__img">
-                        <span class="trip-card__countdown">ใกล้ออก 15 นาที</span>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">พัทยา</h3>
-                        <p class="trip-card__time">รอบเดินทาง : 17:00</p>
-                        <button class="trip-card__btn">จอง</button>
-                    </div>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="trip-card">
-                    <div class="trip-card__img-placeholder">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                            <rect x="4" y="4" width="32" height="32" rx="4" stroke="#C0C0C0" stroke-width="2"
-                                fill="none" />
-                            <circle cx="14" cy="15" r="3" stroke="#C0C0C0" stroke-width="1.5" fill="none" />
-                            <path d="M4 28l9-8 7 6 5-4 11 10" stroke="#C0C0C0" stroke-width="1.5" stroke-linecap="round"
-                                fill="none" />
-                        </svg>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">Title</h3>
-                        <p class="trip-card__desc">Body text for whatever you'd like to say. Add main takeaway points,
-                            quotes, anecdotes, or even a very very short story.</p>
-                    </div>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="trip-card">
-                    <div class="trip-card__img-placeholder">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                            <rect x="4" y="4" width="32" height="32" rx="4" stroke="#C0C0C0" stroke-width="2"
-                                fill="none" />
-                            <circle cx="14" cy="15" r="3" stroke="#C0C0C0" stroke-width="1.5" fill="none" />
-                            <path d="M4 28l9-8 7 6 5-4 11 10" stroke="#C0C0C0" stroke-width="1.5" stroke-linecap="round"
-                                fill="none" />
-                        </svg>
-                    </div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name">Title</h3>
-                        <p class="trip-card__desc">Body text for whatever you'd like to say. Add main takeaway points,
-                            quotes, anecdotes, or even a very very short story.</p>
-                    </div>
-                </div>
+            <!-- Populated by main.js -->
+            <div class="trip-grid" id="most-pickup-grid">
+                <div class="trip-card trip-card--skeleton"></div>
+                <div class="trip-card trip-card--skeleton"></div>
+                <div class="trip-card trip-card--skeleton"></div>
             </div>
 
             <!-- รอบที่ใกล้ออก Section -->
@@ -217,49 +261,11 @@
                     <h2 class="upcoming-section__title">รอบที่ใกล้ออก</h2>
                     <p class="upcoming-section__subtitle">รอบเดินทางที่กำลังจะออกเร็วๆ นี้</p>
                 </div>
-
-                <div class="upcoming-list">
-                    <!-- Row 1 — very soon -->
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก 15 นาที</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → พัทยา</span>
-                            <span class="upcoming-row__time">วันนี้ · 17:00 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">3</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn">จอง</button>
-                    </div>
-
-                    <!-- Row 2 -->
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge">ใกล้ออก 45 นาที</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → ระยอง</span>
-                            <span class="upcoming-row__time">วันนี้ · 17:30 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">8</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn">จอง</button>
-                    </div>
-
-                    <!-- Row 3 -->
-                    <div class="upcoming-row">
-                        <span class="upcoming-row__badge">ใกล้ออก 1 ชม.</span>
-                        <div class="upcoming-row__info">
-                            <span class="upcoming-row__route">กรุงเทพ → ชลบุรี</span>
-                            <span class="upcoming-row__time">วันนี้ · 18:00 น.</span>
-                        </div>
-                        <div class="upcoming-row__seats">
-                            <span class="upcoming-row__seats-count">12</span>
-                            <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                        </div>
-                        <button class="upcoming-row__btn">จอง</button>
-                    </div>
+                <!-- Populated by main.js -->
+                <div class="upcoming-list" id="upcoming-list">
+                    <div class="upcoming-row upcoming-row--skeleton"></div>
+                    <div class="upcoming-row upcoming-row--skeleton"></div>
+                    <div class="upcoming-row upcoming-row--skeleton"></div>
                 </div>
             </section>
         </section><!-- /.section-card -->
