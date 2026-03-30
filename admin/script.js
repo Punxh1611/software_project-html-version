@@ -483,7 +483,7 @@ window.fetchAndRenderSchedules = async function () {
   try {
     schedulesList.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--color-text-soft);">กำลังโหลดข้อมูลรอบรถ...</p>';
 
-    // ดึงข้อมูลปกติ ไม่ต้องเอา estimated_hours มาคำนวณแล้ว
+    // 🛑 แก้ไข Query: ดึง full_name จากตาราง drivers โดยตรง
     const { data: schedules, error } = await supabase
       .from('van_schedules')
       .select(`
@@ -503,10 +503,7 @@ window.fetchAndRenderSchedules = async function () {
     }
 
     schedules.forEach(d => {
-      // 🌟 ดึงสถานะจากฐานข้อมูลมาแสดงตรงๆ เลย ไม่ต้องเดาเวลาแล้ว
-      const currentStatus = d.status || 'scheduled';
-
-      const tripDate = new Date(d.depart_time.replace(' ', 'T'));
+      const tripDate = new Date(d.depart_time);
       const day = tripDate.getDate();
       const monthShort = tripDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
       const timeStr = tripDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
@@ -516,24 +513,11 @@ window.fetchAndRenderSchedules = async function () {
       const dest = d.routes ? d.routes.destination : 'ไม่ระบุ';
       const displayPrice = d.price ?? (d.routes ? d.routes.price : 0);
 
+      // 🛑 แก้ไขการแสดงผลชื่อ: ดึงจาก driverData.full_name เป็นหลัก ถ้าไม่มีให้ใช้ username
       const driverData = d.drivers;
       const driverName = driverData ? (driverData.full_name || driverData.users?.username) : 'ยังไม่ระบุคนขับ';
-      const plateNumber = d.vans?.plate_number || '-';
-
-      // แปลงสถานะเป็นป้ายสี (เปลี่ยนข้อความให้สื่อว่ารอคนขับ/แอดมินกด)
-      let statusText = '⏳ รอคนขับเริ่มงาน';
-      let statusStyle = 'background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;'; 
       
-      if (currentStatus === 'traveling') {
-        statusText = '🚐 กำลังเดินทาง';
-        statusStyle = 'background: #fef3c7; color: #d97706; border: 1px solid #fde68a;'; 
-      } else if (currentStatus === 'completed') {
-        statusText = '✅ ถึงที่หมายแล้ว';
-        statusStyle = 'background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0;'; 
-      } else if (currentStatus === 'cancelled') {
-        statusText = '❌ ยกเลิก';
-        statusStyle = 'background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;'; 
-      }
+      const plateNumber = d.vans?.plate_number || '-';
 
       const div = document.createElement('div');
       div.className = 'card flex-between';
@@ -546,7 +530,6 @@ window.fetchAndRenderSchedules = async function () {
                     </div>
                     <div>
                         <span class="badge ${d.available_seats > 0 ? 'info' : 'warning'}">${d.available_seats > 0 ? 'Available' : 'Full'}</span>
-                        <span class="badge" style="${statusStyle}">${statusText}</span>
                         <h4 style="margin: 4px 0 2px 0;">${origin} &rarr; ${dest}</h4>
                         <small style="color:var(--color-text-soft);">${timeStr} น. | 🧑‍✈️ ${driverName} (${plateNumber})</small>
                         <br><small style="color:var(--color-blue-dark);">จองแล้ว: ${bookedSeats}/${d.total_seats} ที่นั่ง</small>
@@ -574,6 +557,7 @@ window.fetchAndRenderSchedules = async function () {
     schedulesList.innerHTML = `<p style="color:red; text-align:center; padding: 2rem;">โหลดล้มเหลว: ${error.message}</p>`;
   }
 };
+
 window.renderScheduleForm = async function (schedule = null) {
   currentEditScheduleId = schedule ? schedule.id : null;
   currentEditScheduleData = schedule;
@@ -627,8 +611,8 @@ window.renderScheduleForm = async function (schedule = null) {
 
   const defaultTime = `${defaultHour}:${defaultMinute}`;
 
-  // ดึงค่าสถานะเดิมมาโชว์ (ถ้าไม่มีค่าให้เป็น scheduled)
-  const currentStatus = schedule ? (schedule.status || 'scheduled') : 'scheduled';
+  // 🌟 กำหนดสถานะเริ่มต้นเป็น available
+  const currentStatus = schedule ? (schedule.status || 'available') : 'available';
 
   panel.innerHTML = `
         <div style="padding: 0.5rem;">
@@ -640,16 +624,16 @@ window.renderScheduleForm = async function (schedule = null) {
             <div style="display:flex; flex-direction:column; gap:1.2rem;">
                 
                 ${schedule ? `
-                <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px dashed #bbf7d0;">
                     <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:4px;">สถานะการเดินทาง</label>
-                    <select id="sch-status" style="width: 100%; padding: 8px; border: 1px solid var(--color-border-light); border-radius: 8px; font-weight: bold;">
-                        <option value="scheduled" ${currentStatus === 'scheduled' ? 'selected' : ''}>⏳ รอออกเดินทาง</option>
+                    <select id="sch-status" style="width: 100%; padding: 8px; border: 1px solid var(--color-border-light); border-radius: 8px; font-weight: bold; background: white;">
+                        <option value="available" ${currentStatus === 'available' ? 'selected' : ''}>✅ พร้อมเดินทาง (Available)</option>
                         <option value="traveling" ${currentStatus === 'traveling' ? 'selected' : ''}>🚐 กำลังเดินทาง</option>
-                        <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>✅ ถึงที่หมายแล้ว</option>
+                        <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>🏁 ถึงที่หมายแล้ว</option>
                         <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>❌ ยกเลิก</option>
                     </select>
                 </div>
-                ` : `<input type="hidden" id="sch-status" value="scheduled">`}
+                ` : `<input type="hidden" id="sch-status" value="available">`}
 
                 <div>
                     <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:4px;">เส้นทาง <span style="color:red">*</span></label>
@@ -719,6 +703,7 @@ window.renderScheduleForm = async function (schedule = null) {
 
   window.updateSmartDropdowns(schedule ? schedule.van_id : null, schedule ? schedule.driver_id : null);
 };
+
 window.updateSmartDropdowns = function (preSelectVanId = null, preSelectDriverId = null) {
   const routeId = document.getElementById('sch-route')?.value;
   const dateInput = document.getElementById('sch-date');
@@ -891,8 +876,6 @@ window.saveSchedule = async function () {
   const vanId = document.getElementById('sch-van')?.value; 
   const driverId = document.getElementById('sch-driver')?.value;
   const price = document.getElementById('sch-price')?.value;
-  // ดึงค่า status
-  const statusVal = document.getElementById('sch-status')?.value || 'scheduled';
   const seatsVal = document.getElementById('sch-seats')?.value;
   const seats = parseInt(seatsVal);
 
@@ -980,13 +963,12 @@ window.saveSchedule = async function () {
 
     const payload = {
       route_id: finalRouteId, 
-      van_id: vanId,          
-      driver_id: driverId,    
+      van_id: vanId,          // 🌟 ส่ง vanId แบบ UUID ไปตรงๆ เลย
+      driver_id: driverId,    // 🌟 ส่ง driverId แบบ UUID ไปตรงๆ 
       depart_time: timeValStr, 
       price: parseFloat(price) || 0,
       total_seats: seats,
-      available_seats: finalAvailableSeats,
-      status: statusVal  // 🌟 เพิ่มบรรทัดนี้ ส่ง status ไปบันทึก
+      available_seats: finalAvailableSeats
     };
 
     if (currentEditScheduleId) {
