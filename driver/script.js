@@ -1,3 +1,11 @@
+import { toast } from ".toast.js";
+const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+
+    if (!isLoggedIn) {
+        // ถ้าไม่มี ให้แจ้งเตือนและส่งกลับไปหน้า login.html
+        toast("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบก่อน", "warning");
+        window.location.href = "login.html"; 
+    }
 // ===== CONFIG: แก้ข้อมูลคนขับตรงนี้ =====
       const DRIVER = {
         name: 'คุณวิชัย รักงาน',        // ← ใส่ชื่อจริงจาก DB

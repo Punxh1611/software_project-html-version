@@ -1,5 +1,12 @@
+import { toast } from "./toast.js";
 // booking.js — หน้ายืนยันการจอง
+const isLoggedIn = sessionStorage.getItem("isLoggedIn");
 
+    if (!isLoggedIn) {
+        // ถ้าไม่มี ให้แจ้งเตือนและส่งกลับไปหน้า login.html
+        toast("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบก่อน");
+        window.location.href = "login.html"; 
+    }
 const API = "http://localhost:3000/api";
 
 // ── Auth helpers ──────────────────────────────────────

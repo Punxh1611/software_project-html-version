@@ -1,14 +1,16 @@
-<<<<<<< HEAD
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast } from "./toast.js";
-=======
-// register.js — Register page (PostgreSQL version)
-import { toast } from "./Toast.js";
->>>>>>> dev/nwd
 
 const API = "http://localhost:3000/api";
+const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+
+    if (!isLoggedIn) {
+        // ถ้าไม่มี ให้แจ้งเตือนและส่งกลับไปหน้า login.html
+        toast("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบก่อน");
+        window.location.href = "login.html"; 
+    }
 
 // ═══════════════════════════════════════════
 // FIELD VALIDATION UI

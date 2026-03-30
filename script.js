@@ -1,12 +1,7 @@
-<<<<<<< HEAD
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast } from "./toast.js";
-=======
-// script.js — Login page (PostgreSQL version)
-import { toast } from "./Toast.js";
->>>>>>> dev/nwd
 
 const API = "http://localhost:3000/api";
 
@@ -189,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("password")
         ?.addEventListener("input", () => clearField("password"));
 
-<<<<<<< HEAD
     if (userDoc.exists()) {
         const role = userDoc.data().role;
 
@@ -220,13 +214,3 @@ document.addEventListener("DOMContentLoaded", () => {
                 toast("เกิดข้อผิดพลาด: " + error.message);
         }
     }
-=======
-    // กด Enter login ได้เลย
-    ["username", "password"].forEach(id => {
-        document.getElementById(id)
-            ?.addEventListener("keydown", e => {
-                if (e.key === "Enter") doLogin();
-            });
-    });
->>>>>>> dev/nwd
-});

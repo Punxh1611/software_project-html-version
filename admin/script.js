@@ -3,6 +3,14 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, collection, getDocs, query, where, doc, updateDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { toast } from "../toast.js";
 
+const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+
+    if (!isLoggedIn) {
+        // ถ้าไม่มี ให้แจ้งเตือนและส่งกลับไปหน้า login.html
+        toast("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบก่อน", "warning");
+        window.location.href = "login.html"; 
+    }
+
 const firebaseConfig = {
   apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
   authDomain: "vanvan-90cd0.firebaseapp.com",
