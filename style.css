@@ -352,3 +352,161 @@ body {
 .toast--warning .toast__icon { background:#fff3e0; color:#fb8c00; }
 .toast--info    { background:#fff; border-left:4px solid #2E86C1; color:#1B4F72; }
 .toast--info    .toast__icon { background:#EAF4FB;  color:#2E86C1; }
+/* ═══════════════════════════════════════════
+   VALIDATION STYLES — เข้ากับธีม VANVAN
+   ═══════════════════════════════════════════ */
+
+/* Input error state */
+.field input.input--error {
+    border-color: #e53935;
+    background: #fff8f8;
+    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+}
+.field input.input--error:focus {
+    border-color: #e53935;
+    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+}
+
+/* Input success state */
+.field input.input--success {
+    border-color: #43a047;
+    background: #f8fff8;
+    box-shadow: 0 0 0 3px rgba(67, 160, 71, 0.08);
+}
+
+/* Error message under field */
+.field-error-msg {
+    display: block;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    color: #e53935;
+    margin-top: 4px;
+    padding-left: 2px;
+    animation: fadeInDown 0.2s ease both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shake animation เมื่อ submit ผิด */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+}
+.card--shake {
+    animation: shake 0.4s ease both;
+}
+
+/* Password strength bar */
+.strength-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: -8px;
+}
+.strength-bar {
+    flex: 1;
+    height: 5px;
+    background: #e0e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.strength-bar__fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+    width: 0%;
+}
+.strength-label {
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 64px;
+    text-align: right;
+    transition: color 0.3s;
+}
+/* ═══════════════════════════════════════════
+   VALIDATION STYLES — เพิ่มต่อท้าย style.css
+   ═══════════════════════════════════════════ */
+
+/* Input error */
+.field input.input--error {
+    border-color: #e53935;
+    background: #fff8f8;
+    box-shadow: 0 0 0 3px rgba(229,57,53,0.1);
+}
+.field input.input--error:focus {
+    border-color: #e53935;
+    box-shadow: 0 0 0 3px rgba(229,57,53,0.15);
+}
+
+/* Input success */
+.field input.input--success {
+    border-color: #43a047;
+    background: #f8fff8;
+    box-shadow: 0 0 0 3px rgba(67,160,71,0.08);
+}
+
+/* Error message ใต้ field */
+.field-error-msg {
+    display: block;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    color: #e53935;
+    margin-top: 4px;
+    padding-left: 2px;
+    animation: fadeInDown 0.2s ease both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shake animation */
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+}
+.card--shake {
+    animation: shake 0.4s ease both;
+}
+
+/* Password strength */
+.strength-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: -8px;
+}
+.strength-bar {
+    flex: 1;
+    height: 5px;
+    background: #e0e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.strength-bar__fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+    width: 0%;
+}
+.strength-label {
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 64px;
+    text-align: right;
+    transition: color 0.3s;
+}

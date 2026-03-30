@@ -1,105 +1,141 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. ดึงข้อมูลรถที่ลูกค้าเลือกมาจาก LocalStorage
-    const bookingDataStr = localStorage.getItem("currentBooking");
-    
-    if (!bookingDataStr) {
-        alert("ไม่พบข้อมูลการจอง กรุณาทำรายการใหม่ครับ");
-        window.location.href = "index.html";
+// booking.js — หน้ายืนยันการจอง
+
+const API = "http://localhost:3000/api";
+
+// ── Auth helpers ──────────────────────────────────────
+const getToken = () => localStorage.getItem("token");
+const getUser  = () => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } };
+
+// ── Format วันเวลาภาษาไทย ─────────────────────────────
+function formatDate(dateStr) {
+    return new Date(dateStr).toLocaleString("th-TH", {
+        year:    "numeric",
+        month:   "long",
+        day:     "numeric",
+        hour:    "2-digit",
+        minute:  "2-digit",
+        timeZone: "Asia/Bangkok"
+    });
+}
+
+// ── แสดง seats badge ──────────────────────────────────
+function seatsBadge(available) {
+    if (available === 0) {
+        return `<span class="seats-badge seats-badge--full">เต็มแล้ว</span>`;
+    }
+    if (available <= 3) {
+        return `<span class="seats-badge seats-badge--low">เหลือ ${available} ที่นั่ง</span>`;
+    }
+    return `<span class="seats-badge">เหลือ ${available} ที่นั่ง</span>`;
+}
+
+// ── Main ──────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", async () => {
+
+    // ดึง schedule_id จาก URL
+    const params     = new URLSearchParams(window.location.search);
+    const scheduleId = params.get("schedule_id");
+
+    const loadingEl = document.getElementById("loading-state");
+    const contentEl = document.getElementById("booking-content");
+    const errorEl   = document.getElementById("error-state");
+    const warningEl = document.getElementById("login-warning");
+
+    // ตรวจสอบ schedule_id
+    if (!scheduleId) {
+        loadingEl.style.display = "none";
+        errorEl.style.display   = "block";
         return;
     }
 
-    const tripData = JSON.parse(bookingDataStr);
+    // ตรวจสอบว่า Login อยู่ไหม
+    const user  = getUser();
+    const token = getToken();
+    if (!user || !token) {
+        warningEl.style.display = "flex";
+    }
 
-    // 2. เอาข้อมูลไปแปะในหน้าจอ (ส่วนสรุปการเดินทาง)
-    document.getElementById("sum-route").innerText = `${tripData.origin} ➔ ${tripData.destination}`;
-    
-    // แปลงวันที่ให้สวยขึ้น
-    const [y, m, d] = tripData.date.split('-');
-    document.getElementById("sum-date").innerText = `${d}/${m}/${y}`;
-    document.getElementById("sum-time").innerText = `${tripData.time} น.`;
-    document.getElementById("sum-price").innerText = parseFloat(tripData.price).toFixed(2);
+    try {
+        // ดึงข้อมูลรอบรถ
+        const res  = await fetch(`${API}/schedules/${scheduleId}`);
+        const data = await res.json();
 
-    // 3. จำลองจุดจอดรถ (Mock Stops)
-    const stopSelect = document.getElementById("pass-stop");
-    stopSelect.innerHTML = `
-        <option value="${tripData.price}">ลงที่: ปลายทาง ${tripData.destination} (฿${tripData.price})</option>
-        <option value="${tripData.price - 20}">ลงที่: จุดจอดระหว่างทาง (฿${tripData.price - 20})</option>
-    `;
+        if (!res.ok || !data.data) {
+            loadingEl.style.display = "none";
+            errorEl.style.display   = "block";
+            return;
+        }
 
-    // 4. เมื่อเปลี่ยนจุดจอด ให้อัปเดตราคา
-    stopSelect.addEventListener("change", (e) => {
-        document.getElementById("sum-price").innerText = parseFloat(e.target.value).toFixed(2);
-    });
+        const schedule = data.data;
 
-    // 5. โลจิกสลับหน้าจอไปสู่การชำระเงิน
-    const btnSubmit = document.getElementById("btn-submit-booking");
-    const step1Form = document.getElementById("step-1-form");
-    const step2Payment = document.getElementById("step-2-payment");
-    const promptpayNumber = "0812345678"; // 🟢 ใส่เบอร์พร้อมเพย์จำลองของคุณตรงนี้ได้เลย
+        // ตรวจสอบที่นั่ง
+        if (schedule.available_seats <= 0) {
+            loadingEl.style.display = "none";
+            errorEl.style.display   = "block";
+            document.querySelector(".error-box__title").textContent = "ที่นั่งเต็มแล้ว";
+            document.querySelector(".error-box__msg").textContent   = "รอบนี้ไม่มีที่นั่งว่างแล้ว กรุณาเลือกรอบอื่น";
+            return;
+        }
 
-    btnSubmit.addEventListener("click", () => {
-        // ถ้าระบบอยู่ในหน้าชำระเงินแล้ว แปลว่าลูกค้ากดปุ่ม "ยืนยันการชำระเงิน"
-        if (btnSubmit.innerText === "ยืนยันการชำระเงิน") {
-            const slipFile = document.getElementById("slip-upload").files[0];
-            if (!slipFile) {
-                alert("⚠️ กรุณาแนบสลิปชำระเงินก่อนกดยืนยันครับ");
+        // แสดงข้อมูล
+        document.getElementById("info-origin").textContent      = schedule.origin;
+        document.getElementById("info-destination").textContent = schedule.destination;
+        document.getElementById("info-depart").textContent      = formatDate(schedule.depart_time);
+        document.getElementById("info-driver").textContent      = schedule.driver_name || "-";
+        document.getElementById("info-plate").textContent       = schedule.plate_number || "-";
+        document.getElementById("info-price").textContent       = `฿${Number(schedule.price).toLocaleString()}`;
+        document.getElementById("info-seats").innerHTML         = seatsBadge(schedule.available_seats);
+        document.getElementById("info-passenger").textContent   = user ? user.username : "กรุณาเข้าสู่ระบบ";
+
+        // แสดง content
+        loadingEl.style.display = "none";
+        contentEl.style.display = "block";
+
+        // ── ปุ่มยืนยันการจอง ──────────────────────────
+        const btnConfirm = document.getElementById("btn-confirm");
+        btnConfirm.addEventListener("click", async () => {
+
+            // ถ้ายังไม่ login
+            if (!user || !token) {
+                window.location.href = `login.html?redirect=booking.html?schedule_id=${scheduleId}`;
                 return;
             }
-            
-            // 🟢 1. สร้างรหัสการจองจำลอง (Booking Ref)
-            const randomRef = "VAN-" + Math.floor(100000 + Math.random() * 900000);
-            
-            // 🟢 2. เอาข้อมูลจากหน้าเว็บไปแปะลงในตั๋ว
-            document.getElementById("ticket-name").innerText = document.getElementById("pass-name").value;
-            document.getElementById("ticket-ref").innerText = randomRef;
-            
-            const stopSelect = document.getElementById("pass-stop");
-            const selectedStopText = stopSelect.options[stopSelect.selectedIndex].text.split(" (")[0]; // ตัดเอาราคาออก
-            document.getElementById("ticket-stop").innerText = selectedStopText;
-            
-            // ดึงข้อมูลจากส่วนสรุปการเดินทาง (ที่โหลดมาจาก LocalStorage)
-            document.getElementById("ticket-origin").innerText = tripData.origin;
-            document.getElementById("ticket-dest").innerText = tripData.destination;
-            
-            const [y, m, d] = tripData.date.split('-');
-            document.getElementById("ticket-date").innerText = `${d}/${m}/${y}`;
-            document.getElementById("ticket-time").innerText = tripData.time;
 
-            // 🟢 3. สลับ UI (ซ่อนหน้าจอง โชว์หน้าตั๋ว)
-            document.querySelector(".booking-layout").style.display = "none";
-            document.querySelector(".booking-title").style.display = "none";
-            document.getElementById("step-3-ticket").style.display = "block";
-            
-            return;
-        }
+            btnConfirm.disabled     = true;
+            btnConfirm.textContent  = "⏳ กำลังจอง...";
 
-        // ถ้าระบบยังอยู่หน้ากรอกข้อมูล ให้เช็คชื่อและเบอร์
-        const name = document.getElementById("pass-name").value.trim();
-        const phone = document.getElementById("pass-phone").value.trim();
+            try {
+                const bookRes  = await fetch(`${API}/bookings`, {
+                    method:  "POST",
+                    headers: {
+                        "Content-Type":  "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ schedule_id: scheduleId })
+                });
+                const bookData = await bookRes.json();
 
-        if (!name || !phone || phone.length < 9) {
-            alert("⚠️ กรุณากรอก ชื่อ-นามสกุล และเบอร์โทรศัพท์ ให้ครบถ้วนครับ");
-            return;
-        }
+                if (!bookRes.ok) {
+                    alert(bookData.message || "เกิดข้อผิดพลาด");
+                    btnConfirm.disabled    = false;
+                    btnConfirm.textContent = "✅ ยืนยันการจอง";
+                    return;
+                }
 
-        // ดึงราคาปัจจุบัน
-        const currentPrice = document.getElementById("sum-price").innerText;
-        
-        // สลับ UI ปิดฟอร์ม โชว์ QR Code
-        step1Form.style.display = "none";
-        step2Payment.style.display = "block";
-        
-        // สร้าง QR Code พร้อมเพย์แบบกำหนดตัวเลข (ใช้ promptpay.io)
-        document.getElementById("qr-image").src = `https://promptpay.io/${promptpayNumber}/${currentPrice}.png`;
-        document.getElementById("pay-amount").innerText = currentPrice;
+                // จองสำเร็จ → ไปหน้าชำระเงิน
+                window.location.href = `payment.html?booking_id=${bookData.data.id}&expires_at=${bookData.data.expires_at}`;
 
-        // เปลี่ยนหน้าตาปุ่มยืนยัน
-        btnSubmit.innerText = "ยืนยันการชำระเงิน";
-        btnSubmit.style.backgroundColor = "#2E7D32"; // เปลี่ยนปุ่มเป็นสีเขียว
-        
-        // ล็อกข้อมูลฝั่งขวาไม่ให้แก้ไข
-        document.getElementById("pass-name").disabled = true;
-        document.getElementById("pass-phone").disabled = true;
-        document.getElementById("pass-stop").disabled = true;
-    });
+            } catch (err) {
+                console.error(err);
+                alert("ไม่สามารถเชื่อมต่อ Server ได้");
+                btnConfirm.disabled    = false;
+                btnConfirm.textContent = "✅ ยืนยันการจอง";
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        loadingEl.style.display = "none";
+        errorEl.style.display   = "block";
+    }
 });

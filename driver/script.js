@@ -3,18 +3,17 @@
           id: 'T101', route: 'Bangkok - Pattaya', time: '08:30',
           date: '28 Mar 2026', vanNumber: 'VAN-001', status: 'Scheduled',
           passengers: [
-            // 🟢 เพิ่ม phone: '08X-XXX-XXXX' เข้าไปในผู้โดยสารทุกคน
-            { id: 'P1', name: 'สมชาย ใจดี', phone: '081-234-5678', seat: 'A1', ticketId: 'TIC-001', verified: true },
-            { id: 'P2', name: 'Jane Doe', phone: '089-876-5432', seat: 'A2', ticketId: 'TIC-002', verified: false },
-            { id: 'P3', name: 'John Smith', phone: '082-333-4444', seat: 'B1', ticketId: 'TIC-003', verified: false },
-            { id: 'P4', name: 'สมศรี รักดี', phone: '085-555-6666', seat: 'B2', ticketId: 'TIC-004', verified: false },
+            { id: 'P1', name: 'สมชาย ใจดี', seat: 'A1', ticketId: 'TIC-001', verified: true },
+            { id: 'P2', name: 'Jane Doe', seat: 'A2', ticketId: 'TIC-002', verified: false },
+            { id: 'P3', name: 'John Smith', seat: 'B1', ticketId: 'TIC-003', verified: false },
+            { id: 'P4', name: 'สมศรี รักดี', seat: 'B2', ticketId: 'TIC-004', verified: false },
           ]
         },
         {
           id: 'T102', route: 'Pattaya - Bangkok', time: '13:00',
           date: '28 Mar 2026', vanNumber: 'VAN-001', status: 'Scheduled',
           passengers: [
-            { id: 'P5', name: 'Alice Wong', phone: '087-999-0000', seat: 'A1', ticketId: 'TIC-005', verified: false }
+            { id: 'P5', name: 'Alice Wong', seat: 'A1', ticketId: 'TIC-005', verified: false }
           ]
         }
       ];
@@ -204,9 +203,6 @@
                   <div>
                     <p style="font-size:14px;font-weight:700;">${p.name}</p>
                     <p style="font-size:10px;color:var(--color-text-soft);">${p.ticketId}</p>
-                    <p style="font-size:11px;color:var(--color-blue-mid);display:flex;align-items:center;gap:2px;">
-                        <i data-lucide="phone" style="width:10px;height:10px;"></i> ${p.phone}
-                      </p>
                   </div>
                 </div>
                 ${p.verified

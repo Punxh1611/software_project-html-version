@@ -1,765 +1,279 @@
-// ==========================================
-// 🚀 ZONE 1: Import & Firebase Setup
-// ==========================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, getDocs, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// main.js — index.html
 
-const firebaseConfig = {
-    apiKey: "AIzaSyBO40doAV5CKMPdg7rreqtWgXq9hxJgAMk",
-    authDomain: "vanvan-90cd0.firebaseapp.com",
-    projectId: "vanvan-90cd0",
-    storageBucket: "vanvan-90cd0.firebasestorage.app",
-    messagingSenderId: "234295405835",
-    appId: "1:234295405835:web:b5c3e7842f979af686460e"
+const API = "http://localhost:3000/api";
+
+// ── SVG Icons ─────────────────────────────────────────────────────
+const ICONS = {
+    home:    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    booking: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    promo:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 14l6-6M9.5 9.5h.01M14.5 14.5h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    login:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    logout:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    history: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// ── Auth ──────────────────────────────────────────────────────────
+const getUser    = () => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } };
+const getToken   = () => localStorage.getItem("token");
+const isLoggedIn = () => !!getToken() && !!getUser();
 
-// ==========================================
-// 👤 ZONE 2: Authentication (Login/Logout)
-// ==========================================
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        const userDoc = await getDoc(doc(db, "user", user.uid));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        const username = userData.username || user.email;
-        const photoURL = userData.photoURL || null;
-        renderLoggedIn(user, username, photoURL);
-    } else {
-        renderLoggedOut();
-    }
-});
-
-function renderLoggedOut() {
-    const navDesktop = document.getElementById("nav-actions-desktop");
-    const navMobile = document.getElementById("nav-drawer-links");
-    const loggedOutHTML = `
-        <a href="#" class="navbar__a">Home</a>
-        <a href="#" class="navbar__a">My Bookings</a>
-        <a href="#" class="navbar__a">Modify Ticket</a>
-        <a href="#" class="navbar__a">Cancel Ticket</a>
-      
-        <a href="#" class="navbar__a">Help Center</a>
-        <a class="navbar__contact-btn" href="login.html">Login</a>
-    `;
-    if (navDesktop) navDesktop.innerHTML = loggedOutHTML;
-    if (navMobile) navMobile.innerHTML = loggedOutHTML;
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "login.html";
 }
 
-function renderLoggedIn(user, username, photoURL) {
+// ── Navbar ────────────────────────────────────────────────────────
+function renderNavbar() {
     const navDesktop = document.getElementById("nav-actions-desktop");
-    const navMobile = document.getElementById("nav-drawer-links");
-    if (!navDesktop || !navMobile) return;
+    const navMobile  = document.getElementById("nav-drawer-links");
+    const user = getUser();
 
-    const avatarHTML = photoURL
-        ? `<img src="${photoURL}" class="navbar__avatar-img" id="user-photo" alt="avatar" onerror="this.src='default-avatar.png'">`
-        : `<div class="navbar__avatar-initials">${username.charAt(0).toUpperCase()}</div>`;
+    if (isLoggedIn() && user) {
+        const initials   = user.username?.charAt(0).toUpperCase() || "U";
+        const avatarHTML = `<div class="navbar__avatar-initials">${initials}</div>`;
 
-    navDesktop.innerHTML = `
-        <a href="#" class="navbar__a">Home</a>
-        <a href="#" class="navbar__a">My Bookings</a>
-        <a href="#" class="navbar__a">Modify Ticket</a>
-        <a href="#" class="navbar__a">Cancel Ticket</a>
-    
-        <a href="#" class="navbar__a">Help Center</a>
-        <span class="navbar__username" style="margin-left: 10px;">${username}</span>
-        <div class="navbar__avatar navbar__avatar--clickable" id="avatar-btn" style="margin: 0 10px;">
-            ${avatarHTML}
-            <div class="navbar__avatar-overlay"></div>
-        </div>
-        <button class="navbar__logout-btn" id="btn-logout">Logout</button>
-        <input type="file" id="avatar-upload" accept="image/*" style="display:none">
-    `;
+        if (navDesktop) navDesktop.innerHTML = `
+            <a class="navbar__a" href="history.html">Booking</a>
+            <a class="navbar__a" href="#">Promotion</a>
+            <div class="navbar__avatar" title="${user.username}">${avatarHTML}</div>
+            <span class="navbar__username">${user.username}</span>
+            <button class="navbar__logout-btn" id="btn-logout">ออกจากระบบ</button>
+        `;
 
-    navMobile.innerHTML = `
-        <div class="drawer__user" style="padding: 15px; border-bottom: 1px solid #eee;">
-            <div class="drawer__avatar" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden;">
-                ${avatarHTML}
+        if (navMobile) navMobile.innerHTML = `
+            <div class="drawer__user-card">
+                <div class="drawer__user-avatar">${avatarHTML}</div>
+                <div class="drawer__user-info">
+                    <span class="drawer__user-name">${user.username}</span>
+                    <span class="drawer__user-email">${user.email}</span>
+                </div>
             </div>
-            <span class="drawer__username" style="display: block; margin-top: 5px; font-weight: bold;">${username}</span>
-        </div>
-        <a class="drawer__link" href="#">Booking</a>
-        <a class="drawer__link" href="#">Promotion</a>
-        <button class="drawer__link drawer__link--logout" id="btn-logout-mobile" style="color: red; width: 100%; text-align: left;">Logout</button>
-    `;
+            <div class="drawer__divider"></div>
+            <a class="drawer__link" href="index.html">${ICONS.home}<span>หน้าแรก</span></a>
+            <a class="drawer__link" href="history.html">${ICONS.history}<span>การจองของฉัน</span></a>
+            <a class="drawer__link" href="#">${ICONS.promo}<span>Promotion</span></a>
+            <div class="drawer__divider"></div>
+            <button class="drawer__link drawer__link--logout" id="btn-logout-mobile">${ICONS.logout}<span>ออกจากระบบ</span></button>
+        `;
 
-    document.getElementById("btn-logout")?.addEventListener("click", () => signOut(auth));
-    document.getElementById("btn-logout-mobile")?.addEventListener("click", () => signOut(auth));
+        document.getElementById("btn-logout")?.addEventListener("click", logout);
+        document.getElementById("btn-logout-mobile")?.addEventListener("click", logout);
+
+    } else {
+        if (navDesktop) navDesktop.innerHTML = `
+            <a class="navbar__a" href="#">Booking</a>
+            <a class="navbar__a" href="#">Promotion</a>
+            <a class="navbar__contact-btn" href="login.html">เข้าสู่ระบบ</a>
+        `;
+        if (navMobile) navMobile.innerHTML = `
+            <a class="drawer__link" href="index.html">${ICONS.home}<span>หน้าแรก</span></a>
+            <a class="drawer__link" href="#">${ICONS.booking}<span>Booking</span></a>
+            <a class="drawer__link" href="#">${ICONS.promo}<span>Promotion</span></a>
+            <div class="drawer__divider"></div>
+            <a class="drawer__link drawer__link--login" href="login.html">${ICONS.login}<span>เข้าสู่ระบบ / สมัครสมาชิก</span></a>
+        `;
+    }
 }
 
-// ==========================================
-// 🔍 ZONE 3: UI & Search Bar (Flatpickr & Dropdown)
-// ==========================================
-let currentFilter = null;
+// ── โหลด Routes + Schedules ───────────────────────────────────────
+let allRoutes    = [];
+let allSchedules = [];
 
-// 3.0 ข้อมูลเส้นทางจำแนกตามอาคาร
-const destinationsByTerminal = {
-    // "A": ["นครสวรรค์", "พิษณุโลก", "กำแพงเพชร", "เพชรบูรณ์", "อุทัยธานี", "นครราชสีมา", "สระบุรี", "ลพบุรี", "ชัยภูมิ", "บุรีรัมย์"],
-    // "B": ["อยุธยา", "สุพรรณบุรี", "นครปฐม", "สิงห์บุรี", "ชัยนาท"],
-    // "C": ["พัทยา", "สัตหีบ", "ระยอง", "จันทบุรี", "ตราด", "ฉะเชิงเทรา", "ปราจีนบุรี", "สระแก้ว"],
-    // "D": ["กาญจนบุรี", "ราชบุรี", "หัวหิน", "อัมพวา", "มหาชัย"]
-    "A" : ["นครราชสีมา"],
-    "B" : ["อยุธยา"],
-    "C": ["พัทยา", "ระยอง",],
-    "D": ["หัวหิน"]
-};
+async function loadData() {
+    try {
+        const [routesRes, schedulesRes] = await Promise.all([
+            fetch(`${API}/routes`),
+            fetch(`${API}/schedules`)
+        ]);
 
+        allRoutes    = (await routesRes.json()).data    || [];
+        allSchedules = (await schedulesRes.json()).data || [];
+
+        populateDropdowns();
+        renderTripCards();
+        renderUpcomingList();
+
+    } catch (err) {
+        console.error("โหลดข้อมูลไม่ได้:", err);
+    }
+}
+
+// ── Dropdowns ─────────────────────────────────────────────────────
+function populateDropdowns() {
+    const origins = [...new Set(allRoutes.map(r => r.origin))];
+    const dests   = [...new Set(allRoutes.map(r => r.destination))];
+
+    const fromSel = document.getElementById("field-from");
+    const toSel   = document.getElementById("field-to");
+    if (!fromSel || !toSel) return;
+
+    origins.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o; opt.textContent = o;
+        fromSel.appendChild(opt);
+    });
+    dests.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d; opt.textContent = d;
+        toSel.appendChild(opt);
+    });
+}
+
+// ── Trip Cards ────────────────────────────────────────────────────
+function renderTripCards() {
+    const grid = document.getElementById("trip-grid");
+    if (!grid) return;
+
+    // ใช้ schedules ที่มีคนขับ 3 อันแรก
+    const featured = allSchedules.filter(s => s.driver_name).slice(0, 3);
+
+    if (featured.length === 0) {
+        grid.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary)">ยังไม่มีรอบรถในขณะนี้</p>`;
+        return;
+    }
+
+    const colors = ["355872", "4A6D8C", "2C4A6E"];
+    grid.innerHTML = featured.map((s, i) => `
+        <div class="trip-card ${i === 0 ? 'trip-card--featured' : ''}">
+            <div class="trip-card__img-wrapper">
+                <img src="https://placehold.co/277x169/${colors[i % 3]}/white?text=${s.destination}"
+                     alt="${s.destination}" class="trip-card__img"
+                     onerror="this.parentElement.innerHTML='<div class=trip-card__img-placeholder></div>'">
+            </div>
+            <div class="trip-card__body">
+                <h3 class="trip-card__name">${s.destination}</h3>
+                <p class="trip-card__time">จาก ${s.origin} · ฿${Number(s.price).toLocaleString()}</p>
+                <button class="trip-card__btn"
+                    onclick="handleBook('${s.id}')">
+                    จอง
+                </button>
+            </div>
+        </div>
+    `).join("");
+}
+
+// ── Upcoming list ─────────────────────────────────────────────────
+function renderUpcomingList() {
+    const list = document.getElementById("upcoming-list");
+    if (!list) return;
+
+    const upcoming = allSchedules.filter(s => s.driver_name).slice(0, 5);
+
+    if (upcoming.length === 0) {
+        list.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px">ยังไม่มีรอบที่กำลังจะออก</p>`;
+        return;
+    }
+
+    list.innerHTML = upcoming.map(s => {
+        const depart = new Date(s.depart_time);
+        const diff   = depart - Date.now();
+        const mins   = Math.floor(diff / 60000);
+        let badge = "";
+        if (mins < 30)       badge = `<span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก ${mins} นาที</span>`;
+        else if (mins < 60)  badge = `<span class="upcoming-row__badge">ใกล้ออก ${mins} นาที</span>`;
+        else                 badge = `<span class="upcoming-row__badge">ออก ${Math.floor(mins/60)} ชม.</span>`;
+
+        const timeStr = depart.toLocaleTimeString("th-TH", { hour:"2-digit", minute:"2-digit" });
+
+        return `
+            <div class="upcoming-row">
+                ${badge}
+                <div class="upcoming-row__info">
+                    <span class="upcoming-row__route">${s.origin} → ${s.destination}</span>
+                    <span class="upcoming-row__time">วันนี้ · ${timeStr} น.</span>
+                </div>
+                <div class="upcoming-row__seats">
+                    <span class="upcoming-row__seats-count">${s.available_seats}</span>
+                    <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
+                </div>
+                <button class="upcoming-row__btn" onclick="handleBook('${s.id}')">จอง</button>
+            </div>
+        `;
+    }).join("");
+}
+
+// ── Search ────────────────────────────────────────────────────────
+function doSearch() {
+    const from = document.getElementById("field-from")?.value;
+    const to   = document.getElementById("field-to")?.value;
+    const date = document.getElementById("field-date")?.value;
+
+    let filtered = allSchedules.filter(s => s.driver_name);
+    if (from) filtered = filtered.filter(s => s.origin === from);
+    if (to)   filtered = filtered.filter(s => s.destination === to);
+    if (date) filtered = filtered.filter(s => {
+        const d = new Date(s.depart_time).toISOString().split("T")[0];
+        return d === date;
+    });
+
+    // แสดงผลใน upcoming list
+    const list = document.getElementById("upcoming-list");
+    if (!list) return;
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">ไม่พบรอบที่ตรงกัน</p>`;
+        return;
+    }
+
+    allSchedules = filtered;
+    renderUpcomingList();
+}
+
+// ── handleBook ────────────────────────────────────────────────────
+function handleBook(scheduleId) {
+    if (!isLoggedIn()) {
+        window.location.href = `login.html`;
+        return;
+    }
+    window.location.href = `booking.html?schedule_id=${scheduleId}`;
+}
+window.handleBook = handleBook;
+
+// ── Drawer ────────────────────────────────────────────────────────
+function initDrawer() {
+    const hamburger  = document.getElementById("hamburger-btn");
+    const drawer     = document.getElementById("nav-drawer");
+    const overlay    = document.getElementById("drawer-overlay");
+    const closeBtn   = document.getElementById("drawer-close");
+
+    const open  = () => { drawer?.classList.add("open"); overlay?.classList.add("active"); document.body.style.overflow = "hidden"; };
+    const close = () => { drawer?.classList.remove("open"); overlay?.classList.remove("active"); document.body.style.overflow = ""; };
+
+    hamburger?.addEventListener("click", open);
+    closeBtn?.addEventListener("click", close);
+    overlay?.addEventListener("click", close);
+    document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+}
+
+// ── Date ──────────────────────────────────────────────────────────
+function initDate() {
+    const dateInput = document.getElementById("field-date");
+    if (!dateInput) return;
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.value = today;
+    dateInput.min   = today;
+}
+
+// ── Swap ──────────────────────────────────────────────────────────
+function initSwap() {
+    document.getElementById("swap-btn")?.addEventListener("click", () => {
+        const from = document.getElementById("field-from");
+        const to   = document.getElementById("field-to");
+        if (!from || !to) return;
+        const tmp  = from.value;
+        from.value = to.value;
+        to.value   = tmp;
+    });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-    // 3.1 เปิดใช้งาน Flatpickr
-    const dateInput = document.getElementById("search-date");
-    if (dateInput) {
-        flatpickr(dateInput, {
-            locale: "th",
-            minDate: "today",
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "j F Y",
-            disableMobile: true,
-            defaultDate: "today"
-        });
-    }
+    renderNavbar();
+    initDrawer();
+    initSwap();
+    initDate();
+    loadData();
 
-    // 3.2 Custom Dropdown: อาคาร (สายรถ)
-    const terminalInput = document.getElementById("search-terminal");
-    const terminalDropdown = document.getElementById("terminal-dropdown");
-    const terminalWrapper = document.getElementById("terminal-dropdown-wrapper");
-
-    const destInput = document.getElementById("search-dest");
-    const destDropdown = document.getElementById("dest-dropdown");
-    const destWrapper = document.getElementById("dest-dropdown-wrapper");
-
-    // เปิด/ปิด dropdown อาคาร — ทั้ง input และ wrapper
-    function openTerminalDropdown(e) {
-        // ถ้าคลิกที่ dropdown option ให้ข้าม (ไม่ toggle)
-        if (e.target.closest('.custom-dropdown')) return;
-        e.stopPropagation();
-        closeAllDropdowns();
-        terminalDropdown.classList.toggle("active");
-        terminalWrapper.classList.toggle("dropdown-open");
-    }
-    terminalInput?.addEventListener("click", openTerminalDropdown);
-    terminalWrapper?.addEventListener("click", openTerminalDropdown);
-
-    // เลือก option อาคาร
-    terminalDropdown?.querySelectorAll(".custom-dropdown__option").forEach(opt => {
-        opt.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const value = opt.dataset.value;
-            const label = opt.querySelector(".custom-dropdown__label").textContent;
-            const desc = opt.querySelector(".custom-dropdown__desc").textContent;
-
-            // ลบ selected จากอื่น
-            terminalDropdown.querySelectorAll(".custom-dropdown__option").forEach(o => o.classList.remove("selected"));
-            opt.classList.add("selected");
-
-            terminalInput.value = `${label} (${desc})`;
-            terminalInput.dataset.value = value;
-            terminalDropdown.classList.remove("active");
-            terminalWrapper.classList.remove("dropdown-open");
-
-            // อัพเดต destination dropdown
-            populateDestDropdown(value);
-        });
-    });
-
-    function populateDestDropdown(terminal) {
-        const destinations = destinationsByTerminal[terminal] || [];
-        destDropdown.innerHTML = "";
-        destinations.forEach(dest => {
-            const opt = document.createElement("div");
-            opt.className = "custom-dropdown__option";
-            opt.dataset.value = dest;
-            opt.innerHTML = `
-                <span class="custom-dropdown__icon">📍</span>
-                <div class="custom-dropdown__text">
-                    <span class="custom-dropdown__label">${dest}</span>
-                </div>
-            `;
-            opt.addEventListener("click", (e) => {
-                e.stopPropagation();
-                destDropdown.querySelectorAll(".custom-dropdown__option").forEach(o => o.classList.remove("selected"));
-                opt.classList.add("selected");
-                destInput.value = dest;
-                destInput.dataset.value = dest;
-                destDropdown.classList.remove("active");
-                destWrapper.classList.remove("dropdown-open");
-            });
-            destDropdown.appendChild(opt);
-        });
-
-        destInput.disabled = false;
-        destInput.value = "";
-        destInput.placeholder = "เลือกจุดลงรถ...";
-        destInput.style.color = "var(--color-black)";
-        destInput.style.fontWeight = "600";
-    }
-
-    // เปิด/ปิด dropdown ปลายทาง — ทั้ง input และ wrapper
-    function openDestDropdown(e) {
-        if (destInput.disabled) return;
-        if (e.target.closest('.custom-dropdown')) return;
-        e.stopPropagation();
-        closeAllDropdowns();
-        destDropdown.classList.toggle("active");
-        destWrapper.classList.toggle("dropdown-open");
-    }
-    destInput?.addEventListener("click", openDestDropdown);
-    destWrapper?.addEventListener("click", openDestDropdown);
-
-    // ปิด dropdown เมื่อกดที่อื่น
-    document.addEventListener("click", () => {
-        closeAllDropdowns();
-    });
-
-    function closeAllDropdowns() {
-        document.querySelectorAll(".custom-dropdown.active").forEach(d => d.classList.remove("active"));
-        document.querySelectorAll(".dropdown-open").forEach(d => d.classList.remove("dropdown-open"));
-    }
-
-    // 3.3 ระบบปุ่มค้นหา (Search Logic)
-    const btnSearch = document.getElementById("btn-search");
-    const originInput = document.getElementById("search-origin");
-
-    btnSearch?.addEventListener("click", () => {
-        const origin = originInput ? originInput.value.trim() : "หมอชิต 2";
-        const dest = destInput?.dataset?.value || destInput?.value?.trim();
-
-        if (!origin || !dest || !dateInput.value) {
-            alert("กรุณาเลือกอาคาร จุดลงรถ และวันที่เดินทางให้ครบถ้วนก่อนค้นหาครับ");
-            return;
-        }
-
-        let dateStr = "";
-        if (dateInput._flatpickr && dateInput._flatpickr.selectedDates.length > 0) {
-            const dateObj = dateInput._flatpickr.selectedDates[0];
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            dateStr = `${year}-${month}-${day}`;
-        } else {
-            dateStr = dateInput.value;
-        }
-
-        currentFilter = { origin, destination: dest, date: dateStr };
-
-        const upcomingSec = document.querySelector(".upcoming-section");
-        if (upcomingSec) upcomingSec.style.display = "block";
-
-        renderTrips();
-    });
-
-    // 3.5 ฟังก์ชันเคลียร์การค้นหา (global)
-    window.clearSearch = function () {
-        currentFilter = null;
-        showAllTrips = false;
-
-        // รีเซ็ต input fields
-        if (terminalInput) {
-            terminalInput.value = "";
-            terminalInput.dataset.value = "";
-        }
-        if (destInput) {
-            destInput.value = "";
-            destInput.dataset.value = "";
-            destInput.disabled = true;
-            destInput.placeholder = "รอเลือกอาคาร...";
-        }
-        // รีเซ็ตวันที่เป็นวันนี้
-        if (dateInput._flatpickr) {
-            dateInput._flatpickr.setDate(new Date(), true);
-        }
-        // ลบ selected จาก dropdowns
-        terminalDropdown?.querySelectorAll(".custom-dropdown__option").forEach(o => o.classList.remove("selected"));
-        destDropdown?.querySelectorAll(".custom-dropdown__option").forEach(o => o.classList.remove("selected"));
-
-        // รีเซ็ตปุ่ม toggle
-        const toggleBtn = document.getElementById("btn-view-all-upcoming");
-        if (toggleBtn) toggleBtn.textContent = "ดูรอบรถทั้งหมด";
-
-        renderTrips();
-
-        // Scroll กลับขึ้นด้านบน
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    // 3.4 Hamburger Drawer
-    const hamburgerBtn = document.getElementById("hamburger-btn");
-    const navDrawer = document.getElementById("nav-drawer");
-    const drawerOverlay = document.getElementById("drawer-overlay");
-    const drawerClose = document.getElementById("drawer-close");
-
-    hamburgerBtn?.addEventListener("click", () => {
-        navDrawer?.classList.add("open");
-        drawerOverlay?.classList.add("open");
-    });
-
-    drawerClose?.addEventListener("click", () => {
-        navDrawer?.classList.remove("open");
-        drawerOverlay?.classList.remove("open");
-    });
-
-    drawerOverlay?.addEventListener("click", () => {
-        navDrawer?.classList.remove("open");
-        drawerOverlay?.classList.remove("open");
-    });
-
-}); // END DOMContentLoaded
-
-// ==========================================
-// 🚐 ZONE 4: Database Listener & Rendering (ใช้ Mock Data)
-// ==========================================
-let allTrips = [];
-let showAllTrips = false;
-
-// 🛑 1. คอมเมนต์ปิด Firebase ทิ้งไปเลย เพื่อไม่ให้มันพยายามดึงข้อมูลที่โควต้าเต็มแล้ว
-/*
-onSnapshot(collection(db, "trips"), (querySnapshot) => {
-    allTrips = [];
-    querySnapshot.forEach((docSnap) => {
-        allTrips.push({ id: docSnap.id, ...docSnap.data() });
-    });
-    renderTrips();
-    renderPopularRoutes();
+    document.getElementById("search-btn")?.addEventListener("click", doSearch);
 });
-*/
-
-// 🟢 2. ใส่ข้อมูลจำลอง (Mock Data) เข้าไปแทน
-function loadMockData() {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    
-    const currentHour = now.getHours();
-    const nextHour = (currentHour + 1) % 24;
-    const time1 = `${String(currentHour).padStart(2, '0')}:30`;
-    const time2 = `${String(nextHour).padStart(2, '0')}:00`;
-
-    allTrips = [
-        { id: "M1", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: time1, price: 150, availableSeats: 5 },
-        { id: "M2", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: time2, price: 150, availableSeats: 0 },
-        { id: "M3", routeId: "R02", origin: "หมอชิต 2", destination: "หัวหิน", date: todayStr, time: time1, price: 200, availableSeats: 12 },
-        { id: "M4", routeId: "R03", origin: "หมอชิต 2", destination: "ระยอง", date: todayStr, time: time2, price: 180, availableSeats: 2 },
-        { id: "M5", routeId: "R04", origin: "หมอชิต 2", destination: "อยุธยา", date: todayStr, time: time1, price: 80, availableSeats: 14 },
-        { id: "M6", routeId: "R05", origin: "หมอชิต 2", destination: "นครราชสีมา", date: todayStr, time: time2, price: 250, availableSeats: 8 },
-        { id: "M7", routeId: "R01", origin: "หมอชิต 2", destination: "พัทยา", date: todayStr, time: "23:59", price: 150, availableSeats: 14 }
-    ];
-
-    renderTrips();
-    renderPopularRoutes();
-    console.log("✅ โหลดข้อมูลจำลอง (Mock Data) สำเร็จ!");
-}
-
-// 🟢 3. เรียกใช้ข้อมูลจำลองทันทีตอนโหลดหน้าเว็บ
-loadMockData();
-
-function calculateArrivalTime(startTime, price) {
-    const durationMinutes = Math.floor(price * 1.2);
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes + durationMinutes, 0);
-    const endHours = String(date.getHours()).padStart(2, '0');
-    const endMins = String(date.getMinutes()).padStart(2, '0');
-    return `${endHours}:${endMins}`;
-}
-
-// ปุ่ม "ดูรอบรถทั้งหมด / แสดงน้อยลง"
-window.toggleAllTrips = function () {
-    showAllTrips = !showAllTrips; // สลับค่าไปมา (True/False)
-    renderTrips(); // สั่งให้ระบบคำนวณและวาดปุ่มใหม่เอง
-};
-
-function renderTrips() {
-    const tripGrid = document.querySelector(".trip-grid");
-    if (!tripGrid) return;
-
-    tripGrid.innerHTML = "";
-
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const currentHourMin = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-
-    let displayData = [];
-    let filteredTrips = []; // 🟢 เพิ่มตัวแปรนี้เพื่อเก็บรถที่ผ่านเงื่อนไขทั้งหมดก่อนตัด 6 คัน
-
-    const promoBanner = document.querySelector(".promo-banner");
-    const quickRoutes = document.querySelector(".quick-routes");
-    const howItWorks = document.querySelector(".how-it-works");
-    const serviceHighlights = document.querySelector(".service-highlights");
-
-    if (currentFilter) {
-        document.getElementById("main-list-title").innerHTML = `🔍 ผลการค้นหา`;
-        document.getElementById("main-list-subtitle").innerHTML = `
-            <div class="search-title-flex">
-                <span class="search-title-text">
-                    📍 ${currentFilter.origin} ➔ ${currentFilter.destination} | 📅 วันที่ ${currentFilter.date}
-                </span>
-                <button class="btn-clear-filter-themed" onclick="window.clearSearch()">
-                    ✕ ล้างผลค้นหา
-                </button>
-            </div>
-        `;
-        if (promoBanner) promoBanner.style.display = "none";
-        if (quickRoutes) quickRoutes.style.display = "none";
-        if (howItWorks) howItWorks.style.display = "none";
-        if (serviceHighlights) serviceHighlights.style.display = "none";
-
-        // 🟢 โหมดค้นหา: ดึงรถตามวันที่และเส้นทางที่เลือก
-        filteredTrips = allTrips.filter(trip => {
-            const isMatch = (trip.origin?.trim() === currentFilter.origin) &&
-                            (trip.destination?.trim() === currentFilter.destination) &&
-                            (trip.date === currentFilter.date);
-            if (!isMatch) return false;
-            // ถ้ารถเป็นของวันนี้ เช็คว่าเวลายังไม่ผ่านไป
-            if (trip.date === todayStr) return trip.time >= currentHourMin; 
-            if (trip.date < todayStr) return false; 
-            return true;
-        }).sort((a, b) => a.time.localeCompare(b.time));
-        
-    } else {
-        document.getElementById("main-list-title").innerText = "🚐 รอบที่ใกล้ออก";
-        document.getElementById("main-list-subtitle").innerText = "รอบเดินทางภายใน 1 ชั่วโมงนี้";
-
-        if (promoBanner) promoBanner.style.display = "";
-        if (quickRoutes) quickRoutes.style.display = "";
-        if (howItWorks) howItWorks.style.display = "";
-        if (serviceHighlights) serviceHighlights.style.display = "";
-
-        // 🟢 โหมดหน้าแรก: ดึงเฉพาะรถที่กำลังจะออกภายใน 1 ชั่วโมง
-        const nowMs = now.getTime(); // เวลาปัจจุบัน (มิลลิวินาที)
-        const oneHourLaterMs = nowMs + (60 * 60 * 1000); // เวลาบวกไปอีก 1 ชั่วโมง (60 นาที * 60 วินาที * 1000 มิลลิวินาที)
-
-        filteredTrips = allTrips.filter(trip => {
-            // แปลงวันที่และเวลาของรอบรถแต่ละคันให้เป็น Timestamp
-            const tripDateTime = new Date(`${trip.date}T${trip.time}:00`);
-            const tripMs = tripDateTime.getTime();
-            
-            // เช็คว่า: รถต้องยังไม่ออก (>= เวลาปัจจุบัน) และ ต้องออกภายใน 1 ชั่วโมง (<= เวลาอีก 1 ชม.ข้างหน้า)
-            return tripMs >= nowMs && tripMs <= oneHourLaterMs;
-            
-        }).sort((a, b) => {
-            if (a.date === b.date) return a.time.localeCompare(b.time);
-            return a.date.localeCompare(b.date);
-        });
-    }
-    // ==========================================
-    // 🟢 โลจิกปุ่ม "ดูรอบรถทั้งหมด" (ใช้ร่วมกันทั้งหน้าแรกและตอนค้นหา)
-    // ==========================================
-    
-    // ถ้ากดดูทั้งหมด ให้โชว์เต็มๆ แต่ถ้าไม่ได้กด ให้ตัดมาแค่ 6 รอบ
-    displayData = showAllTrips ? filteredTrips : filteredTrips.slice(0, 6);
-
-    const actionsWrapper = document.getElementById("upcoming-actions-wrapper");
-    const btnViewAll = document.getElementById("btn-view-all-upcoming");
-    
-    if (actionsWrapper && btnViewAll) {
-        // ถ้ารอบรถรวมทั้งหมดมีมากกว่า 6 คัน
-        if (filteredTrips.length > 6) {
-            actionsWrapper.style.display = "block"; 
-            btnViewAll.innerText = showAllTrips ? "✕ แสดงน้อยลง" : "ดูรอบรถทั้งหมด";
-        } else {
-            // ถ้ารอบรถมี 6 คัน หรือน้อยกว่า
-            actionsWrapper.style.display = "none";
-        }
-    }
-
-    // 🟢 (โค้ดหา lastTripsMap ของเดิม ปล่อยไว้เหมือนเดิมครับ)
-    
-    const lastTripsMap = {};
-    allTrips.forEach(trip => {
-        if (trip.date === todayStr) {
-            if (!lastTripsMap[trip.routeId] || trip.time > lastTripsMap[trip.routeId].time) {
-                lastTripsMap[trip.routeId] = trip;
-            }
-        }
-    });
-
-    if (displayData.length === 0) {
-        tripGrid.innerHTML = "<p style='text-align:center; padding: 40px; color:#757575;'>ไม่มีรอบรถในขณะนี้</p>";
-    } else {
-        displayData.forEach(trip => {
-            const isFull = trip.availableSeats <= 0;
-            const arrivalTime = calculateArrivalTime(trip.time, trip.price);
-
-            const isLastTrip = (lastTripsMap[trip.routeId] && lastTripsMap[trip.routeId].id === trip.id);
-            const lastTripBadge = isLastTrip ? `<span style="background:#E8520A; color:white; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:8px; animation: blink 2s infinite;">🔥 รถเที่ยวสุดท้าย</span>` : '';
-
-            let dateBadge = "";
-            if (trip.date === todayStr) {
-                dateBadge = `<div style="font-size: 12px; color: #E67E22; font-weight: normal;">วันนี้</div>`;
-            } else {
-                const tomorrow = new Date(now);
-                tomorrow.setDate(now.getDate() + 1);
-                const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-                if (trip.date === tomorrowStr) {
-                    dateBadge = `<div style="font-size: 12px; color: #2E86C1; font-weight: normal;">พรุ่งนี้</div>`;
-                } else {
-                    const [y, m, d] = trip.date.split('-');
-                    dateBadge = `<div style="font-size: 12px; color: #757575; font-weight: normal;">${d}/${m}/${y.substring(2)}</div>`;
-                }
-            }
-
-            const cardHTML = `
-                <div class="ticket-card" style="opacity: ${isFull ? '0.6' : '1'};">
-                    <div class="ticket-header">
-                        <div class="ticket-company">
-                            <span class="ticket-company-name">VANVAN Express ${lastTripBadge}</span>
-                            
-                        </div>
-                        <div class="ticket-price-box">
-                            <div class="ticket-price-val">฿${parseFloat(trip.price).toFixed(2)}</div>
-                            <div class="ticket-seats" style="color: ${isFull ? '#e53935' : (trip.availableSeats <= 3 ? '#E67E22' : '#2E7D32')}">
-                                ${isFull ? 'เต็มแล้ว' : `ว่าง: ${trip.availableSeats} ที่`}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ticket-timeline">
-                        <div class="timeline-point start">
-                            <div style="display: flex; flex-direction: column; align-items: flex-start; min-width: 50px;">
-                                <span class="time-val" style="min-width: unset;">${trip.time}</span>
-                                ${dateBadge}
-                            </div>
-                            <span class="place-val">จุดจอด ${trip.origin}</span>
-                        </div>
-                        <div class="timeline-point end">
-                            <div style="display: flex; flex-direction: column; align-items: flex-start; min-width: 50px;">
-                                <span class="time-val" style="min-width: unset;">${arrivalTime}</span>
-                            </div>
-                            <span class="place-val">จุดลงรถ ${trip.destination}</span>
-                        </div>
-                    </div>
-                    <div class="ticket-footer">
-                        <button class="btn-book-ticket" 
-                                ${isFull ? 'disabled' : ''} 
-                                onclick="window.bookTicket('${trip.id}', '${trip.routeId}', ${trip.availableSeats})">
-                            ${isFull ? 'ที่นั่งเต็ม' : 'จองตั๋ว'}
-                        </button>
-                    </div>
-                </div>
-            `;
-            tripGrid.innerHTML += cardHTML;
-        });
-    }
-}
-
-// ==========================================
-// 📍 ZONE 4.5: Popular Routes (ปลายทางยอดฮิต)
-// ==========================================
-// ==========================================
-// 📍 ZONE 4.5: Popular Routes (ปลายทางยอดฮิต) - อัปเกรดภาพ & ราคา
-// ==========================================
-function renderPopularRoutes() {
-    const container = document.getElementById("quick-routes-chips");
-    if (!container) return;
-
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    const currentHourMin = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-
-    // 🟢 คลังรูปภาพสถานที่ (ถ้าไม่มีชื่อในนี้ จะใช้รูป default แทน)
-    const destImages = {
-        // "พัทยา": "https://images.unsplash.com/photo-1550850839-8dc894ed385a?w=500&q=80",
-        // "หัวหิน": "https://images.unsplash.com/photo-1596524454151-518f87a8cb40?w=500&q=80",
-        // "ระยอง": "https://images.unsplash.com/photo-1588693892095-2bd0e14cb751?w=500&q=80",
-        // "อยุธยา": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B9%84%E0%B8%8A%E0%B8%A2%E0%B8%A7%E0%B8%B1%E0%B8%92%E0%B8%99%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1_%E0%B8%97%E0%B8%B4%E0%B8%A8%E0%B8%95%E0%B8%B0%E0%B8%A7%E0%B8%B1%E0%B8%99%E0%B8%AD%E0%B8%AD%E0%B8%81.jpg/1920px-%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B9%84%E0%B8%8A%E0%B8%A2%E0%B8%A7%E0%B8%B1%E0%B8%92%E0%B8%99%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1_%E0%B8%97%E0%B8%B4%E0%B8%A8%E0%B8%95%E0%B8%B0%E0%B8%A7%E0%B8%B1%E0%B8%99%E0%B8%AD%E0%B8%AD%E0%B8%81.jpg?w=500&q=80",
-        // "นครราชสีมา": "https://images.unsplash.com/photo-1622308644420-b20152b19211?w=500&q=80",
-        // "กาญจนบุรี": "https://images.unsplash.com/photo-1599839619722-39751411ea63?w=500&q=80",
-        // "อัมพวา" : "https://img.kapook.com/u/2016/suppaporn/amphawa/pic02.jpg",
-        // "ฉะเชิงเทรา": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMusRQ_dHe5-TWiK0mcvvAiauv-jtrzvkEUQ&s?w=500&q=80",
-        // "นครปฐม": "https://img.kapook.com/u/2020/pattra/pattravel202008/shutterstock_517972276.jpg?w=500&q=80",
-        // "นครสวรรค์" : "https://www.checkinchill.com/storage/content/c825325c-4c6b-46ae-958c-c6cbe8079e74.webp?w=500&q=80",
-        // "พิษณุโลก" : "https://cms.kapook.com/uploads/tag/4/ID_3614_64b7590b4a92c.jpg?w=500&q=80",
-        // "กำแพงเพชร" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0X9JLyqqAM-_bKT-rueNwiGcF5uAJTtDNTw&s?w=500&q=80",
-        // "เพชรบูรณ์" : "https://www.ananda.co.th/blog/thegenc/wp-content/uploads/2024/09/shutterstock_2274666959-823x550.jpg?w=500&q=80",
-        // "อุทัยธานี" :"https://cdn.spsmartvan.com/wp-content/uploads/2025/03/1.-%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%88%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1-%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%97%E0%B9%88%E0%B8%B2%E0%B8%8B%E0%B8%B8%E0%B8%87.webp?w=500&q=80",
-        // "สระบุรี": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2mWYS2INb4e56NU_9MhlX2NU_hKysFpLT0g&s?w=500&q=80", 
-        // "ลพบุรี" : "https://upload.wikimedia.org/wikipedia/commons/6/60/%E0%B8%9B%E0%B8%A3%E0%B8%B2%E0%B8%AA%E0%B8%B2%E0%B8%97%E0%B8%9B%E0%B8%A3%E0%B8%B2%E0%B8%87%E0%B8%84%E0%B9%8C%E0%B8%AA%E0%B8%B2%E0%B8%A1%E0%B8%A2%E0%B8%AD%E0%B8%942.jpg?w=500&q=80", 
-        // "ชัยภูมิ" : "https://cdn.spsmartvan.com/wp-content/uploads/2025/03/2.-%E0%B8%9C%E0%B8%B2%E0%B8%AA%E0%B8%B8%E0%B8%94%E0%B9%81%E0%B8%9C%E0%B9%88%E0%B8%99%E0%B8%94%E0%B8%B4%E0%B8%99-%E0%B8%AD%E0%B8%B8%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%99%E0%B9%81%E0%B8%AB%E0%B9%88%E0%B8%87%E0%B8%8A%E0%B8%B2%E0%B8%95%E0%B8%B4%E0%B8%9B%E0%B9%88%E0%B8%B2%E0%B8%AB%E0%B8%B4%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%A1.jpeg?w=500&q=80", 
-        // "บุรีรัมย์" : "https://s.isanook.com/tr/0/ui/283/1419929/1f33d8b6ca79cdeeb610726556513679_1583919972.jpg?w=500&q=80",
-        // "สุพรรณบุรี" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR089kTlpq3LdrkaWxMdy8swmfnPTLJNzEgAQ&s?w=500&q=80", 
-        // "สิงห์บุรี" : "https://s.isanook.com/tr/0/ud/282/1413113/istock-537985975.jpg?ip/resize/w728/q80/jpg?w=500&q=80", 
-        // "ชัยนาท" : "https://travel.mthai.com/app/uploads/2014/12/unnamed2-1.jpg?w=500&q=80",
-        // "สัตหีบ" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWGyStRiDRbivGLTmlis96-VC7zH89A08rXA&s?w=500&q=80",  
-        // "จันทบุรี" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaJMgr4U3UujvWHWoC6L67YF66Z4G2I9Mm0w&s?w=500&q=80", 
-        // "ตราด": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIwJ6_4P7LmvZim-gUVo6CbQHrO3fdsbsUZQ&s?w=500&q=80", 
-        // "ปราจีนบุรี" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa0xDSpb3XMLZN81bQa1vDYflyLkHMP38s-A&s?w=500&q=80", 
-        // "สระแก้ว" : "https://s359.kapook.com/pagebuilder/55ec8246-ee24-4923-b55c-1f99642990d6.jpg?w=500&q=80",
-        // "ราชบุรี" : "https://www.rentconnected.com/blogs/wp-content/webpc-passthru.php?src=https://www.rentconnected.com/blogs/wp-content/uploads/2023/03/%E0%B9%80%E0%B8%82%E0%B8%B2%E0%B8%AB%E0%B8%B4%E0%B8%99%E0%B8%87%E0%B8%B9_1500px-1024x768.jpg&nocache=1&w=500&q=80   ", 
-        // "มหาชัย" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSE_RIU5Ex1rgnzDJ3Ri95HuxzzI0yc1MelNg&s?w=500&q=80",
-        "default": "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=500&q=80" // รูปถนนสวยๆ ในไทย
-    };
-
- 
-
-    const destStats = {};
-    allTrips.forEach(trip => {
-        if (trip.date !== todayStr) return;
-        
-        const dest = trip.destination;
-        if (!dest) return;
-        
-        if (!destStats[dest]) {
-            destStats[dest] = { 
-                destination: dest, 
-                totalTrips: 0,       
-                upcomingTrips: 0,    
-                totalSeats: 0,
-                minPrice: Infinity, // 🟢 เพิ่มตัวแปรเก็บราคาถูกที่สุด      
-                origin: trip.origin || "หมอชิต 2" 
-            };
-        }
-        
-        destStats[dest].totalTrips++;
-        
-        // หาราคาเริ่มต้นที่ถูกที่สุดของสายนี้
-        const tripPrice = parseFloat(trip.price) || 150;
-        if (tripPrice < destStats[dest].minPrice) {
-            destStats[dest].minPrice = tripPrice;
-        }
-        
-        if (trip.time >= currentHourMin) {
-            destStats[dest].upcomingTrips++;
-            destStats[dest].totalSeats += (trip.availableSeats || 0);
-        }
-    });
-
-    const topRoutes = Object.values(destStats)
-        .sort((a, b) => b.totalTrips - a.totalTrips)
-        .slice(0, 4);
-
-    if (topRoutes.length === 0) {
-        container.innerHTML = `<p style="color:#757575; font-size:14px;">ไม่มีรอบรถวันนี้ในขณะนี้</p>`;
-        return;
-    }
-
-    container.innerHTML = "";
-    topRoutes.forEach(route => {
-        let btnText = "จอง";
-        let isDisabled = false;
-
-        if (route.upcomingTrips === 0) {
-            btnText = "หมดรอบ"; 
-            isDisabled = true;
-        } else if (route.totalSeats <= 0) {
-            btnText = "เต็ม";    
-            isDisabled = true;
-        }
-
-        const displayPrice = route.minPrice === Infinity ? "150" : route.minPrice;
-        const imgUrl = destImages[route.destination] || destImages["default"];
-
-        const card = document.createElement("div");
-        card.className = "popular-route-card";
-        
-        // 🟢 เปลี่ยนโครงสร้าง HTML ให้มีรูปภาพและป้ายราคา
-        card.innerHTML = `
-            <div class="popular-route-card__img-box">
-                <img src="${imgUrl}" alt="${route.destination}" class="popular-route-card__img">
-                <div class="popular-route-card__price-badge">เริ่มต้น ฿${displayPrice}</div>
-            </div>
-            <div class="popular-route-card__content">
-                <div class="popular-route-card__info">
-                    <span class="popular-route-card__dest">${route.destination}</span>
-                    <span class="popular-route-card__stats">รถเหลือ ${route.upcomingTrips} เที่ยว</span>
-                </div>
-                <button class="popular-route-card__btn" ${isDisabled ? 'disabled' : ''}>
-                    ${btnText}
-                </button>
-            </div>
-        `;
-
-        const bookBtn = card.querySelector(".popular-route-card__btn");
-        if (bookBtn && !isDisabled) {
-            bookBtn.addEventListener("click", () => {
-                let foundTerminal = null;
-                for (const [terminal, dests] of Object.entries(destinationsByTerminal)) {
-                    if (dests.includes(route.destination)) {
-                        foundTerminal = terminal;
-                        break;
-                    }
-                }
-
-                const terminalInput = document.getElementById("search-terminal");
-                const destInput = document.getElementById("search-dest");
-                const dateInput = document.getElementById("search-date");
-
-                if (foundTerminal && terminalInput) {
-                    const terminalLabels = { A: "อาคาร A (เหนือ / อีสาน)", B: "อาคาร B (กลาง)", C: "อาคาร C (ตะวันออก)", D: "อาคาร D (ใต้ / ตะวันตก)" };
-                    terminalInput.value = terminalLabels[foundTerminal] || `อาคาร ${foundTerminal}`;
-                    terminalInput.dataset.value = foundTerminal;
-
-                    const destDropdown = document.getElementById("dest-dropdown");
-                    const destinations = destinationsByTerminal[foundTerminal] || [];
-                    if (destDropdown) {
-                        destDropdown.innerHTML = "";
-                        destinations.forEach(dest => {
-                            const opt = document.createElement("div");
-                            opt.className = "custom-dropdown__option";
-                            opt.dataset.value = dest;
-                            opt.innerHTML = `<span class="custom-dropdown__icon">📍</span><div class="custom-dropdown__text"><span class="custom-dropdown__label">${dest}</span></div>`;
-                            if (dest === route.destination) opt.classList.add("selected");
-                            destDropdown.appendChild(opt);
-                        });
-                    }
-                }
-
-                if (destInput) {
-                    destInput.value = route.destination;
-                    destInput.dataset.value = route.destination;
-                    destInput.disabled = false;
-                }
-
-                if (dateInput?._flatpickr) {
-                    dateInput._flatpickr.setDate(new Date(), true);
-                }
-
-                currentFilter = { origin: route.origin, destination: route.destination, date: todayStr };
-                showAllTrips = false;
-                const toggleBtn = document.getElementById("btn-view-all-upcoming");
-                if (toggleBtn) toggleBtn.textContent = "ดูรอบรถทั้งหมด";
-
-                renderTrips();
-                document.querySelector(".upcoming-section")?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        }
-        container.appendChild(card);
-    });
-}
-
-// ==========================================
-// 🎟️ ZONE 5: Booking Redirect Logic (ระบบใหม่ส่งไปหน้า Booking)
-// ==========================================
-window.bookTicket = function (tripId, routeId, currentSeats) {
-    if (currentSeats <= 0) {
-        alert("ขออภัยครับ รถรอบนี้ที่นั่งเต็มแล้ว 😭");
-        return;
-    }
-
-    // หาข้อมูลรอบรถที่ลูกค้ากดเลือกจาก Mock Data
-    const selectedTrip = allTrips.find(t => t.id === tripId);
-    if (!selectedTrip) {
-        alert("เกิดข้อผิดพลาด ไม่พบข้อมูลรอบรถครับ");
-        return;
-    }
-
-    // บันทึกข้อมูลรถลงในหน่วยความจำของเบราว์เซอร์ชั่วคราว (LocalStorage)
-    localStorage.setItem("currentBooking", JSON.stringify(selectedTrip));
-
-    // เด้งไปที่หน้าจองตั๋ว
-    window.location.href = "booking.html";
-};
-
-// ==========================================
-// 🛠️ ZONE 6: System Utilities (Live Sync & Mock Data)
-// ==========================================
-setInterval(() => {
-    if (!currentFilter) {
-        renderTrips();
-        console.log("⏱️ Live Sync: อัปเดตตารางรถตามเวลาปัจจุบันเรียบร้อย");
-    }
-}, 60000);
-
-
