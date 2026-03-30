@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VANVAN — ชำระเงิน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-main.css">
+    <style>
+        .payment-container {
+            max-width: 560px;
+            margin: 32px auto;
+            padding: 0 16px 48px;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-thai);
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--color-brand); }
+
+        /* Countdown */
+        .countdown-box {
+            background: #fff3e0;
+            border: 1.5px solid #ffcc80;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .countdown-box__label {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            color: #e65100;
+        }
+        .countdown-box__timer {
+            font-family: var(--font-ui);
+            font-size: 24px;
+            font-weight: 700;
+            color: #e65100;
+            letter-spacing: 2px;
+        }
+        .countdown-box--expired {
+            background: #ffebee;
+            border-color: #ef9a9a;
+        }
+        .countdown-box--expired .countdown-box__label,
+        .countdown-box--expired .countdown-box__timer {
+            color: #c62828;
+        }
+
+        /* Payment card */
+        .payment-card {
+            background: var(--color-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .payment-card__header {
+            background: var(--color-brand);
+            padding: 20px 24px;
+            color: white;
+        }
+        .payment-card__header h2 {
+            font-family: var(--font-thai);
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .payment-card__body {
+            padding: 24px;
+        }
+
+        /* Bank info */
+        .bank-info {
+            background: var(--color-bg);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .bank-info__title {
+            font-family: var(--font-thai);
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+        }
+        .bank-info__account {
+            font-family: var(--font-ui);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-brand);
+            letter-spacing: 1px;
+        }
+        .bank-info__name {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            color: var(--color-black);
+            margin-top: 4px;
+        }
+        .bank-info__amount {
+            font-family: var(--font-thai);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--color-brand);
+            margin-top: 12px;
+        }
+
+        /* Upload zone */
+        .upload-label {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-black);
+            margin-bottom: 10px;
+            display: block;
+        }
+        .upload-zone {
+            border: 2px dashed var(--color-border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--color-bg);
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: var(--color-brand);
+            background: #f0f4f8;
+        }
+        .upload-zone.has-file {
+            border-color: #43a047;
+            background: #f1f8e9;
+        }
+        .upload-zone__icon { font-size: 36px; margin-bottom: 8px; }
+        .upload-zone__text {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+        .upload-zone__hint {
+            font-family: var(--font-thai);
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+            margin-top: 4px;
+        }
+        .upload-zone__preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 12px;
+            display: none;
+        }
+        #slip-input { display: none; }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: var(--radius-btn);
+            background: var(--color-brand);
+            font-family: var(--font-thai);
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn-submit:hover { background: #2a4860; }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Success state */
+        .success-card {
+            background: var(--color-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 40px 24px;
+            text-align: center;
+            display: none;
+        }
+        .success-card__icon { font-size: 64px; margin-bottom: 16px; }
+        .success-card__title {
+            font-family: var(--font-thai);
+            font-size: 22px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 8px;
+        }
+        .success-card__msg {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .btn-history {
+            display: inline-block;
+            padding: 14px 32px;
+            background: var(--color-brand);
+            color: white;
+            border-radius: var(--radius-btn);
+            font-family: var(--font-thai);
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M3 12h18M3 18h18" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <span class="navbar__mobile-title">VANVAN</span>
+        <div class="navbar__left">
+            <div class="logo"><span class="van-text">VANVAN</span></div>
+        </div>
+        <nav class="navbar__actions" id="nav-actions-desktop"></nav>
+    </header>
+
+    <div class="payment-container">
+        <a href="index.html" class="back-link">← กลับหน้าหลัก</a>
+
+        <!-- Countdown timer -->
+        <div class="countdown-box" id="countdown-box">
+            <span class="countdown-box__label">⏰ กรุณาชำระเงินภายใน</span>
+            <span class="countdown-box__timer" id="countdown-timer">15:00</span>
+        </div>
+
+        <!-- Payment card -->
+        <div class="payment-card" id="payment-card">
+            <div class="payment-card__header">
+                <h2>ชำระเงิน</h2>
+            </div>
+            <div class="payment-card__body">
+
+                <!-- Bank info -->
+                <div class="bank-info">
+                    <div class="bank-info__title">โอนเงินมาที่</div>
+                    <div class="bank-info__account">123-4-56789-0</div>
+                    <div class="bank-info__name">ธนาคารกสิกรไทย · บริษัท แวนแวน จำกัด</div>
+                    <div class="bank-info__amount" id="payment-amount">฿0</div>
+                </div>
+
+                <!-- Upload slip -->
+                <span class="upload-label">📎 แนบสลิปการโอนเงิน</span>
+                <div class="upload-zone" id="upload-zone"
+                     onclick="document.getElementById('slip-input').click()">
+                    <div class="upload-zone__icon">📤</div>
+                    <div class="upload-zone__text">คลิกเพื่อเลือกไฟล์สลิป</div>
+                    <div class="upload-zone__hint">รองรับ JPG, PNG (ไม่เกิน 5MB)</div>
+                    <img id="slip-preview" class="upload-zone__preview" alt="preview">
+                </div>
+                <input type="file" id="slip-input" accept="image/jpeg,image/png">
+
+                <button class="btn-submit" id="btn-submit" disabled>
+                    📤 ส่งสลิปการชำระเงิน
+                </button>
+            </div>
+        </div>
+
+        <!-- Success card -->
+        <div class="success-card" id="success-card">
+            <div class="success-card__icon">✅</div>
+            <div class="success-card__title">ส่งสลิปสำเร็จ!</div>
+            <div class="success-card__msg">
+                ระบบได้รับสลิปของคุณแล้ว<br>
+                กรุณารอ Admin ตรวจสอบและออก E-Ticket<br>
+                (ปกติใช้เวลาไม่เกิน 1 ชั่วโมง)
+            </div>
+            <a href="history.html" class="btn-history">ดูประวัติการจอง</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { toast } from "./Toast.js";
+
+        const API      = "http://localhost:3000/api";
+        const token    = localStorage.getItem("token");
+        const params   = new URLSearchParams(window.location.search);
+        const bookingId = params.get("booking_id");
+        const expiresAt = params.get("expires_at");
+
+        if (!bookingId || !token) {
+            window.location.href = "index.html";
+        }
+
+        // ── Countdown ──────────────────────────────────
+        function startCountdown() {
+            const expireTime = new Date(expiresAt).getTime();
+            const timerEl    = document.getElementById("countdown-timer");
+            const boxEl      = document.getElementById("countdown-box");
+
+            const interval = setInterval(() => {
+                const now  = Date.now();
+                const diff = expireTime - now;
+
+                if (diff <= 0) {
+                    clearInterval(interval);
+                    timerEl.textContent = "00:00";
+                    boxEl.classList.add("countdown-box--expired");
+                    document.getElementById("btn-submit").disabled = true;
+                    toast("หมดเวลาชำระเงิน กรุณาจองใหม่", "error");
+                    setTimeout(() => { window.location.href = "index.html"; }, 3000);
+                    return;
+                }
+
+                const min = Math.floor(diff / 60000);
+                const sec = Math.floor((diff % 60000) / 1000);
+                timerEl.textContent = `${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+
+                // เปลี่ยนสีเมื่อเหลือน้อย
+                if (diff < 3 * 60 * 1000) {
+                    boxEl.classList.add("countdown-box--expired");
+                }
+            }, 1000);
+        }
+
+        startCountdown();
+
+        // ── ดึงราคาจาก booking ─────────────────────────
+        async function loadBookingAmount() {
+            try {
+                const res  = await fetch(`${API}/bookings`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const booking = data.data?.find(b => b.id === bookingId);
+                if (booking) {
+                    document.getElementById("payment-amount").textContent =
+                        `฿${Number(booking.amount).toLocaleString()}`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadBookingAmount();
+
+        // ── Preview รูปสลิป ─────────────────────────────
+        const slipInput  = document.getElementById("slip-input");
+        const slipPreview = document.getElementById("slip-preview");
+        const uploadZone  = document.getElementById("upload-zone");
+        const btnSubmit   = document.getElementById("btn-submit");
+
+        slipInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast("ไฟล์ใหญ่เกิน 5MB", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                slipPreview.src     = ev.target.result;
+                slipPreview.style.display = "block";
+                uploadZone.classList.add("has-file");
+                uploadZone.querySelector(".upload-zone__text").textContent = file.name;
+                btnSubmit.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ── Submit สลิป ─────────────────────────────────
+        btnSubmit.addEventListener("click", async () => {
+            const file = slipInput.files[0];
+            if (!file) { toast("กรุณาเลือกไฟล์สลิปก่อน", "warning"); return; }
+
+            btnSubmit.disabled    = true;
+            btnSubmit.textContent = "⏳ กำลังส่ง...";
+
+            const formData = new FormData();
+            formData.append("slip", file);
+
+            try {
+                const res  = await fetch(`${API}/bookings/${bookingId}/slip`, {
+                    method:  "POST",
+                    headers: { "Authorization": `Bearer ${token}` },
+                    body:    formData
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    toast(data.message || "เกิดข้อผิดพลาด", "error");
+                    btnSubmit.disabled    = false;
+                    btnSubmit.textContent = "📤 ส่งสลิปการชำระเงิน";
+                    return;
+                }
+
+                // สำเร็จ → แสดง success card
+                document.getElementById("payment-card").style.display  = "none";
+                document.getElementById("countdown-box").style.display = "none";
+                document.getElementById("success-card").style.display  = "block";
+
+            } catch (err) {
+                console.error(err);
+                toast("ไม่สามารถเชื่อมต่อ Server ได้", "error");
+                btnSubmit.disabled    = false;
+                btnSubmit.textContent = "📤 ส่งสลิปการชำระเงิน";
+            }
+        });
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
