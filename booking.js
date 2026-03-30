@@ -1,62 +1,60 @@
-// booking.js — หน้ายืนยันการจอง
+// booking.js — แค่ดูข้อมูล ไม่แตะ DB เลย
 
 const API = "http://localhost:3000/api";
 
-// ── Auth helpers ──────────────────────────────────────
 const getToken = () => localStorage.getItem("token");
-const getUser  = () => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } };
+const getUser  = () => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } }
 
-// ── Format วันเวลาภาษาไทย ─────────────────────────────
+function isLoggedIn() {
+    const token = getToken();
+    const user  = getUser();
+    if (!token || !user) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 < Date.now()) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            return false;
+        }
+    } catch { return false; }
+    return true;
+}
+
 function formatDate(dateStr) {
     return new Date(dateStr).toLocaleString("th-TH", {
-        year:    "numeric",
-        month:   "long",
-        day:     "numeric",
-        hour:    "2-digit",
-        minute:  "2-digit",
+        year: "numeric", month: "long", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
         timeZone: "Asia/Bangkok"
     });
 }
 
-// ── แสดง seats badge ──────────────────────────────────
 function seatsBadge(available) {
-    if (available === 0) {
-        return `<span class="seats-badge seats-badge--full">เต็มแล้ว</span>`;
-    }
-    if (available <= 3) {
-        return `<span class="seats-badge seats-badge--low">เหลือ ${available} ที่นั่ง</span>`;
-    }
+    if (available === 0)  return `<span class="seats-badge seats-badge--full">เต็มแล้ว</span>`;
+    if (available <= 3)   return `<span class="seats-badge seats-badge--low">เหลือ ${available} ที่นั่ง</span>`;
     return `<span class="seats-badge">เหลือ ${available} ที่นั่ง</span>`;
 }
 
-// ── Main ──────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-
-    // ดึง schedule_id จาก URL
     const params     = new URLSearchParams(window.location.search);
     const scheduleId = params.get("schedule_id");
+    const loadingEl  = document.getElementById("loading-state");
+    const contentEl  = document.getElementById("booking-content");
+    const errorEl    = document.getElementById("error-state");
 
-    const loadingEl = document.getElementById("loading-state");
-    const contentEl = document.getElementById("booking-content");
-    const errorEl   = document.getElementById("error-state");
-    const warningEl = document.getElementById("login-warning");
-
-    // ตรวจสอบ schedule_id
+    // ถ้าไม่มี schedule_id
     if (!scheduleId) {
         loadingEl.style.display = "none";
         errorEl.style.display   = "block";
         return;
     }
 
-    // ตรวจสอบว่า Login อยู่ไหม
-    const user  = getUser();
-    const token = getToken();
-    if (!user || !token) {
-        warningEl.style.display = "flex";
+    // ถ้าไม่ได้ login → ไป login
+    if (!isLoggedIn()) {
+        window.location.href = "login.html";
+        return;
     }
 
     try {
-        // ดึงข้อมูลรอบรถ
         const res  = await fetch(`${API}/schedules/${scheduleId}`);
         const data = await res.json();
 
@@ -66,71 +64,44 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const schedule = data.data;
+        const s = data.data;
 
-        // ตรวจสอบที่นั่ง
-        if (schedule.available_seats <= 0) {
+        // ที่นั่งเต็ม
+        if (s.available_seats <= 0) {
             loadingEl.style.display = "none";
             errorEl.style.display   = "block";
-            document.querySelector(".error-box__title").textContent = "ที่นั่งเต็มแล้ว";
-            document.querySelector(".error-box__msg").textContent   = "รอบนี้ไม่มีที่นั่งว่างแล้ว กรุณาเลือกรอบอื่น";
+            document.getElementById("error-title").textContent = "ที่นั่งเต็มแล้ว";
+            document.getElementById("error-msg").textContent   = "รอบนี้ไม่มีที่นั่งว่าง กรุณาเลือกรอบอื่น";
             return;
         }
 
         // แสดงข้อมูล
-        document.getElementById("info-origin").textContent      = schedule.origin;
-        document.getElementById("info-destination").textContent = schedule.destination;
-        document.getElementById("info-depart").textContent      = formatDate(schedule.depart_time);
-        document.getElementById("info-driver").textContent      = schedule.driver_name || "-";
-        document.getElementById("info-plate").textContent       = schedule.plate_number || "-";
-        document.getElementById("info-price").textContent       = `฿${Number(schedule.price).toLocaleString()}`;
-        document.getElementById("info-seats").innerHTML         = seatsBadge(schedule.available_seats);
-        document.getElementById("info-passenger").textContent   = user ? user.username : "กรุณาเข้าสู่ระบบ";
+        const user = getUser();
+        document.getElementById("info-origin").textContent      = s.origin;
+        document.getElementById("info-destination").textContent = s.destination;
+        document.getElementById("info-depart").textContent      = formatDate(s.depart_time);
+        document.getElementById("info-driver").textContent      = s.driver_name  || "-";
+        document.getElementById("info-plate").textContent       = s.plate_number || "-";
+        document.getElementById("info-price").textContent       = `฿${Number(s.price).toLocaleString()}`;
+        document.getElementById("info-seats").innerHTML         = seatsBadge(s.available_seats);
+        document.getElementById("info-passenger").textContent   = user?.username || "-";
 
-        // แสดง content
         loadingEl.style.display = "none";
         contentEl.style.display = "block";
 
-        // ── ปุ่มยืนยันการจอง ──────────────────────────
-        const btnConfirm = document.getElementById("btn-confirm");
-        btnConfirm.addEventListener("click", async () => {
-
-            // ถ้ายังไม่ login
-            if (!user || !token) {
-                window.location.href = `login.html?redirect=booking.html?schedule_id=${scheduleId}`;
-                return;
-            }
-
-            btnConfirm.disabled     = true;
-            btnConfirm.textContent  = "⏳ กำลังจอง...";
-
-            try {
-                const bookRes  = await fetch(`${API}/bookings`, {
-                    method:  "POST",
-                    headers: {
-                        "Content-Type":  "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ schedule_id: scheduleId })
-                });
-                const bookData = await bookRes.json();
-
-                if (!bookRes.ok) {
-                    alert(bookData.message || "เกิดข้อผิดพลาด");
-                    btnConfirm.disabled    = false;
-                    btnConfirm.textContent = "✅ ยืนยันการจอง";
-                    return;
-                }
-
-                // จองสำเร็จ → ไปหน้าชำระเงิน
-                window.location.href = `payment.html?booking_id=${bookData.data.id}&expires_at=${bookData.data.expires_at}`;
-
-            } catch (err) {
-                console.error(err);
-                alert("ไม่สามารถเชื่อมต่อ Server ได้");
-                btnConfirm.disabled    = false;
-                btnConfirm.textContent = "✅ ยืนยันการจอง";
-            }
+        // ✅ กดยืนยัน → ส่งข้อมูลผ่าน sessionStorage ไปหน้า payment
+        // ไม่แตะ DB เลย
+        document.getElementById("btn-confirm").addEventListener("click", () => {
+            sessionStorage.setItem("pendingBooking", JSON.stringify({
+                schedule_id:  s.id,
+                origin:       s.origin,
+                destination:  s.destination,
+                depart_time:  s.depart_time,
+                price:        s.price,
+                driver_name:  s.driver_name,
+                plate_number: s.plate_number,
+            }));
+            window.location.href = "payment.html";
         });
 
     } catch (err) {

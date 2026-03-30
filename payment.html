@@ -9,218 +9,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
     <style>
-        .payment-container {
-            max-width: 560px;
-            margin: 32px auto;
-            padding: 0 16px 48px;
-        }
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-family: var(--font-thai);
-            font-size: 14px;
-            color: var(--color-text-secondary);
-            text-decoration: none;
-            margin-bottom: 20px;
-            transition: color 0.2s;
-        }
-        .back-link:hover { color: var(--color-brand); }
+        .payment-container { max-width:560px; margin:32px auto; padding:0 16px 48px; }
+        .back-link { display:inline-flex; align-items:center; gap:6px; font-family:var(--font-thai); font-size:14px; color:var(--color-text-secondary); text-decoration:none; margin-bottom:20px; transition:color 0.2s; cursor:pointer; background:none; border:none; }
+        .back-link:hover { color:#c62828; }
 
-        /* Countdown */
-        .countdown-box {
-            background: #fff3e0;
-            border: 1.5px solid #ffcc80;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .countdown-box__label {
-            font-family: var(--font-thai);
-            font-size: 14px;
-            color: #e65100;
-        }
-        .countdown-box__timer {
-            font-family: var(--font-ui);
-            font-size: 24px;
-            font-weight: 700;
-            color: #e65100;
-            letter-spacing: 2px;
-        }
-        .countdown-box--expired {
-            background: #ffebee;
-            border-color: #ef9a9a;
-        }
-        .countdown-box--expired .countdown-box__label,
-        .countdown-box--expired .countdown-box__timer {
-            color: #c62828;
-        }
+        .payment-card { background:var(--color-white); border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); overflow:hidden; margin-bottom:16px; }
+        .payment-card__header { background:var(--color-brand); padding:20px 24px; color:white; }
+        .payment-card__header h2 { font-family:var(--font-thai); font-size:18px; font-weight:600; }
+        .payment-card__body { padding:24px; display:flex; flex-direction:column; gap:16px; }
 
-        /* Payment card */
-        .payment-card {
-            background: var(--color-white);
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-        .payment-card__header {
-            background: var(--color-brand);
-            padding: 20px 24px;
-            color: white;
-        }
-        .payment-card__header h2 {
-            font-family: var(--font-thai);
-            font-size: 18px;
-            font-weight: 600;
-        }
-        .payment-card__body {
-            padding: 24px;
-        }
+        /* Summary */
+        .summary-box { background:var(--color-bg); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:8px; }
+        .summary-row { display:flex; justify-content:space-between; font-family:var(--font-thai); font-size:14px; }
+        .summary-row__label { color:var(--color-text-secondary); }
+        .summary-row__value { font-weight:600; color:var(--color-black); }
+        .summary-row--price .summary-row__value { font-size:20px; color:var(--color-brand); }
 
         /* Bank info */
-        .bank-info {
-            background: var(--color-bg);
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-        }
-        .bank-info__title {
-            font-family: var(--font-thai);
-            font-size: 13px;
-            color: var(--color-text-secondary);
-            margin-bottom: 8px;
-        }
-        .bank-info__account {
-            font-family: var(--font-ui);
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--color-brand);
-            letter-spacing: 1px;
-        }
-        .bank-info__name {
-            font-family: var(--font-thai);
-            font-size: 14px;
-            color: var(--color-black);
-            margin-top: 4px;
-        }
-        .bank-info__amount {
-            font-family: var(--font-thai);
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--color-brand);
-            margin-top: 12px;
-        }
+        .bank-box { background:#f0f7ff; border:1.5px solid #90caf9; border-radius:10px; padding:16px 20px; }
+        .bank-box__title { font-family:var(--font-thai); font-size:13px; color:#1565c0; margin-bottom:6px; }
+        .bank-box__account { font-family:var(--font-ui); font-size:20px; font-weight:700; color:#1565c0; letter-spacing:2px; }
+        .bank-box__name { font-family:var(--font-thai); font-size:14px; color:var(--color-black); margin-top:4px; }
 
-        /* Upload zone */
-        .upload-label {
-            font-family: var(--font-thai);
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--color-black);
-            margin-bottom: 10px;
-            display: block;
-        }
-        .upload-zone {
-            border: 2px dashed var(--color-border);
-            border-radius: 12px;
-            padding: 32px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: var(--color-bg);
-            position: relative;
-        }
-        .upload-zone:hover {
-            border-color: var(--color-brand);
-            background: #f0f4f8;
-        }
-        .upload-zone.has-file {
-            border-color: #43a047;
-            background: #f1f8e9;
-        }
-        .upload-zone__icon { font-size: 36px; margin-bottom: 8px; }
-        .upload-zone__text {
-            font-family: var(--font-thai);
-            font-size: 14px;
-            color: var(--color-text-secondary);
-        }
-        .upload-zone__hint {
-            font-family: var(--font-thai);
-            font-size: 12px;
-            color: var(--color-text-tertiary);
-            margin-top: 4px;
-        }
-        .upload-zone__preview {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            margin-top: 12px;
-            display: none;
-        }
-        #slip-input { display: none; }
+        /* Upload */
+        .upload-label { font-family:var(--font-thai); font-size:14px; font-weight:600; color:var(--color-black); display:block; margin-bottom:8px; }
+        .upload-zone { border:2px dashed var(--color-border); border-radius:12px; padding:28px; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--color-bg); }
+        .upload-zone:hover { border-color:var(--color-brand); background:#f0f4f8; }
+        .upload-zone.has-file { border-color:#43a047; background:#f1f8e9; }
+        .upload-zone__icon { font-size:32px; margin-bottom:8px; }
+        .upload-zone__text { font-family:var(--font-thai); font-size:14px; color:var(--color-text-secondary); }
+        .upload-zone__hint { font-family:var(--font-thai); font-size:12px; color:var(--color-text-tertiary); margin-top:4px; }
+        .upload-zone__preview { max-width:100%; max-height:180px; border-radius:8px; margin-top:12px; display:none; }
+        #slip-input { display:none; }
 
-        /* Submit button */
-        .btn-submit {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: var(--radius-btn);
-            background: var(--color-brand);
-            font-family: var(--font-thai);
-            font-size: 16px;
-            font-weight: 700;
-            color: white;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background 0.2s;
-        }
-        .btn-submit:hover { background: #2a4860; }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        /* Buttons */
+        .btn-submit { width:100%; padding:16px; border:none; border-radius:var(--radius-btn); background:var(--color-brand); font-family:var(--font-thai); font-size:16px; font-weight:700; color:white; cursor:pointer; transition:background 0.2s; margin-top:4px; }
+        .btn-submit:hover { background:#2a4860; }
+        .btn-submit:disabled { opacity:0.6; cursor:not-allowed; }
+        .btn-cancel-booking { width:100%; padding:14px; border:1.5px solid #ef9a9a; border-radius:var(--radius-btn); background:white; font-family:var(--font-thai); font-size:15px; font-weight:600; color:#c62828; cursor:pointer; transition:all 0.2s; margin-top:8px; }
+        .btn-cancel-booking:hover { background:#ffebee; }
 
-        /* Success state */
-        .success-card {
-            background: var(--color-white);
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            padding: 40px 24px;
-            text-align: center;
-            display: none;
-        }
-        .success-card__icon { font-size: 64px; margin-bottom: 16px; }
-        .success-card__title {
-            font-family: var(--font-thai);
-            font-size: 22px;
-            font-weight: 700;
-            color: #2e7d32;
-            margin-bottom: 8px;
-        }
-        .success-card__msg {
-            font-family: var(--font-thai);
-            font-size: 14px;
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-            margin-bottom: 24px;
-        }
-        .btn-history {
-            display: inline-block;
-            padding: 14px 32px;
-            background: var(--color-brand);
-            color: white;
-            border-radius: var(--radius-btn);
-            font-family: var(--font-thai);
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-        }
+        /* Success */
+        .success-card { background:var(--color-white); border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:40px 24px; text-align:center; display:none; }
+        .success-card__icon { font-size:64px; margin-bottom:16px; }
+        .success-card__title { font-family:var(--font-thai); font-size:22px; font-weight:700; color:#2e7d32; margin-bottom:8px; }
+        .success-card__msg { font-family:var(--font-thai); font-size:14px; color:var(--color-text-secondary); line-height:1.6; margin-bottom:24px; }
+        .btn-history { display:inline-block; padding:14px 32px; background:var(--color-brand); color:white; border-radius:var(--radius-btn); font-family:var(--font-thai); font-size:15px; font-weight:700; text-decoration:none; }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
     <header class="navbar">
         <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -228,20 +66,14 @@
             </svg>
         </button>
         <span class="navbar__mobile-title">VANVAN</span>
-        <div class="navbar__left">
-            <div class="logo"><span class="van-text">VANVAN</span></div>
-        </div>
+        <div class="navbar__left"><div class="logo"><span class="van-text">VANVAN</span></div></div>
         <nav class="navbar__actions" id="nav-actions-desktop"></nav>
     </header>
 
     <div class="payment-container">
-        <a href="index.html" class="back-link">← กลับหน้าหลัก</a>
 
-        <!-- Countdown timer -->
-        <div class="countdown-box" id="countdown-box">
-            <span class="countdown-box__label">⏰ กรุณาชำระเงินภายใน</span>
-            <span class="countdown-box__timer" id="countdown-timer">15:00</span>
-        </div>
+        <!-- ✅ ปุ่ม Cancel กลับหน้าหลักโดยไม่มีอะไรใน DB -->
+        <button class="back-link" id="btn-back">← ยกเลิกและกลับหน้าหลัก</button>
 
         <!-- Payment card -->
         <div class="payment-card" id="payment-card">
@@ -250,148 +82,147 @@
             </div>
             <div class="payment-card__body">
 
-                <!-- Bank info -->
-                <div class="bank-info">
-                    <div class="bank-info__title">โอนเงินมาที่</div>
-                    <div class="bank-info__account">123-4-56789-0</div>
-                    <div class="bank-info__name">ธนาคารกสิกรไทย · บริษัท แวนแวน จำกัด</div>
-                    <div class="bank-info__amount" id="payment-amount">฿0</div>
+                <!-- สรุปการเดินทาง -->
+                <div class="summary-box" id="summary-box">
+                    <div class="summary-row">
+                        <span class="summary-row__label">เส้นทาง</span>
+                        <span class="summary-row__value" id="sum-route">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-row__label">วันเวลา</span>
+                        <span class="summary-row__value" id="sum-depart">-</span>
+                    </div>
+                    <div class="summary-row summary-row--price">
+                        <span class="summary-row__label">ยอดชำระ</span>
+                        <span class="summary-row__value" id="sum-price">-</span>
+                    </div>
                 </div>
 
-                <!-- Upload slip -->
-                <span class="upload-label">📎 แนบสลิปการโอนเงิน</span>
-                <div class="upload-zone" id="upload-zone"
-                     onclick="document.getElementById('slip-input').click()">
-                    <div class="upload-zone__icon">📤</div>
-                    <div class="upload-zone__text">คลิกเพื่อเลือกไฟล์สลิป</div>
-                    <div class="upload-zone__hint">รองรับ JPG, PNG (ไม่เกิน 5MB)</div>
-                    <img id="slip-preview" class="upload-zone__preview" alt="preview">
+                <!-- ข้อมูลบัญชี -->
+                <div class="bank-box">
+                    <div class="bank-box__title">💙 โอนเงินมาที่</div>
+                    <div class="bank-box__account">123-4-56789-0</div>
+                    <div class="bank-box__name">ธนาคารกสิกรไทย · บริษัท แวนแวน จำกัด</div>
                 </div>
-                <input type="file" id="slip-input" accept="image/jpeg,image/png">
 
+                <!-- อัปโหลดสลิป -->
+                <div>
+                    <span class="upload-label">📎 แนบสลิปการโอนเงิน</span>
+                    <div class="upload-zone" id="upload-zone"
+                         onclick="document.getElementById('slip-input').click()">
+                        <div class="upload-zone__icon">📤</div>
+                        <div class="upload-zone__text">คลิกเพื่อเลือกไฟล์สลิป</div>
+                        <div class="upload-zone__hint">รองรับ JPG, PNG (ไม่เกิน 5MB)</div>
+                        <img id="slip-preview" class="upload-zone__preview" alt="preview">
+                    </div>
+                    <input type="file" id="slip-input" accept="image/jpeg,image/png">
+                </div>
+
+                <!-- ✅ ยืนยัน = สร้าง booking + บันทึกสลิปในทีเดียว -->
                 <button class="btn-submit" id="btn-submit" disabled>
-                    📤 ส่งสลิปการชำระเงิน
+                    ✅ ยืนยันการจองและส่งสลิป
                 </button>
+
+                <!-- ✅ Cancel = กลับหน้าหลัก ไม่มีอะไรใน DB -->
+                <button class="btn-cancel-booking" id="btn-cancel">
+                    ❌ ยกเลิกการจอง
+                </button>
+
             </div>
         </div>
 
-        <!-- Success card -->
+        <!-- Success -->
         <div class="success-card" id="success-card">
             <div class="success-card__icon">✅</div>
             <div class="success-card__title">ส่งสลิปสำเร็จ!</div>
             <div class="success-card__msg">
                 ระบบได้รับสลิปของคุณแล้ว<br>
-                กรุณารอ Admin ตรวจสอบและออก E-Ticket<br>
+                รอ Admin ตรวจสอบและออก E-Ticket<br>
                 (ปกติใช้เวลาไม่เกิน 1 ชั่วโมง)
             </div>
             <a href="history.html" class="btn-history">ดูประวัติการจอง</a>
         </div>
+
     </div>
 
     <script type="module">
         import { toast } from "./Toast.js";
 
-        const API      = "http://localhost:3000/api";
-        const token    = localStorage.getItem("token");
-        const params   = new URLSearchParams(window.location.search);
-        const bookingId = params.get("booking_id");
-        const expiresAt = params.get("expires_at");
+        const API   = "http://localhost:3000/api";
+        const token = localStorage.getItem("token");
 
-        if (!bookingId || !token) {
+        // ── ตรวจสอบ token ──────────────────────────────────
+        if (!token) { window.location.href = "login.html"; }
+
+        // ── ดึงข้อมูลจาก sessionStorage ───────────────────
+        const pending = JSON.parse(sessionStorage.getItem("pendingBooking") || "null");
+        if (!pending) {
+            toast("ไม่พบข้อมูลการจอง กรุณาเลือกรอบใหม่", "error");
+            setTimeout(() => window.location.href = "index.html", 2000);
+        } else {
+            // แสดงสรุป
+            const depart = new Date(pending.depart_time).toLocaleString("th-TH", {
+                year: "numeric", month: "long", day: "numeric",
+                hour: "2-digit", minute: "2-digit",
+                timeZone: "Asia/Bangkok"
+            });
+            document.getElementById("sum-route").textContent  = `${pending.origin} → ${pending.destination}`;
+            document.getElementById("sum-depart").textContent = depart;
+            document.getElementById("sum-price").textContent  = `฿${Number(pending.price).toLocaleString()}`;
+        }
+
+        // ── Cancel = กลับหน้าหลัก ─────────────────────────
+        // ไม่มีอะไรใน DB เลย ✅
+        function goBack() {
+            sessionStorage.removeItem("pendingBooking");
             window.location.href = "index.html";
         }
-
-        // ── Countdown ──────────────────────────────────
-        function startCountdown() {
-            const expireTime = new Date(expiresAt).getTime();
-            const timerEl    = document.getElementById("countdown-timer");
-            const boxEl      = document.getElementById("countdown-box");
-
-            const interval = setInterval(() => {
-                const now  = Date.now();
-                const diff = expireTime - now;
-
-                if (diff <= 0) {
-                    clearInterval(interval);
-                    timerEl.textContent = "00:00";
-                    boxEl.classList.add("countdown-box--expired");
-                    document.getElementById("btn-submit").disabled = true;
-                    toast("หมดเวลาชำระเงิน กรุณาจองใหม่", "error");
-                    setTimeout(() => { window.location.href = "index.html"; }, 3000);
-                    return;
-                }
-
-                const min = Math.floor(diff / 60000);
-                const sec = Math.floor((diff % 60000) / 1000);
-                timerEl.textContent = `${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
-
-                // เปลี่ยนสีเมื่อเหลือน้อย
-                if (diff < 3 * 60 * 1000) {
-                    boxEl.classList.add("countdown-box--expired");
-                }
-            }, 1000);
-        }
-
-        startCountdown();
-
-        // ── ดึงราคาจาก booking ─────────────────────────
-        async function loadBookingAmount() {
-            try {
-                const res  = await fetch(`${API}/bookings`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-                const data = await res.json();
-                const booking = data.data?.find(b => b.id === bookingId);
-                if (booking) {
-                    document.getElementById("payment-amount").textContent =
-                        `฿${Number(booking.amount).toLocaleString()}`;
-                }
-            } catch (err) {
-                console.error(err);
+        document.getElementById("btn-back").addEventListener("click", goBack);
+        document.getElementById("btn-cancel").addEventListener("click", () => {
+            if (confirm("ยืนยันการยกเลิก?\nที่นั่งจะถูกปล่อยคืนทันที")) {
+                goBack();
             }
-        }
+        });
 
-        loadBookingAmount();
-
-        // ── Preview รูปสลิป ─────────────────────────────
-        const slipInput  = document.getElementById("slip-input");
+        // ── Preview รูปสลิป ─────────────────────────────────
+        const slipInput   = document.getElementById("slip-input");
         const slipPreview = document.getElementById("slip-preview");
         const uploadZone  = document.getElementById("upload-zone");
         const btnSubmit   = document.getElementById("btn-submit");
 
-        slipInput.addEventListener("change", (e) => {
+        slipInput.addEventListener("change", e => {
             const file = e.target.files[0];
             if (!file) return;
-
             if (file.size > 5 * 1024 * 1024) {
                 toast("ไฟล์ใหญ่เกิน 5MB", "error");
                 return;
             }
-
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                slipPreview.src     = ev.target.result;
+            reader.onload = ev => {
+                slipPreview.src           = ev.target.result;
                 slipPreview.style.display = "block";
                 uploadZone.classList.add("has-file");
-                uploadZone.querySelector(".upload-zone__text").textContent = file.name;
+                uploadZone.querySelector(".upload-zone__text").textContent = `✅ ${file.name}`;
                 btnSubmit.disabled = false;
             };
             reader.readAsDataURL(file);
         });
 
-        // ── Submit สลิป ─────────────────────────────────
+        // ── Submit = สร้าง booking + บันทึกสลิปในทีเดียว ──
         btnSubmit.addEventListener("click", async () => {
             const file = slipInput.files[0];
             if (!file) { toast("กรุณาเลือกไฟล์สลิปก่อน", "warning"); return; }
+            if (!pending) { toast("ไม่พบข้อมูลการจอง", "error"); return; }
 
             btnSubmit.disabled    = true;
             btnSubmit.textContent = "⏳ กำลังส่ง...";
 
             const formData = new FormData();
+            formData.append("schedule_id", pending.schedule_id);
             formData.append("slip", file);
 
             try {
-                const res  = await fetch(`${API}/bookings/${bookingId}/slip`, {
+                const res  = await fetch(`${API}/bookings/confirm`, {
                     method:  "POST",
                     headers: { "Authorization": `Bearer ${token}` },
                     body:    formData
@@ -401,20 +232,22 @@
                 if (!res.ok) {
                     toast(data.message || "เกิดข้อผิดพลาด", "error");
                     btnSubmit.disabled    = false;
-                    btnSubmit.textContent = "📤 ส่งสลิปการชำระเงิน";
+                    btnSubmit.textContent = "✅ ยืนยันการจองและส่งสลิป";
                     return;
                 }
 
-                // สำเร็จ → แสดง success card
-                document.getElementById("payment-card").style.display  = "none";
-                document.getElementById("countdown-box").style.display = "none";
-                document.getElementById("success-card").style.display  = "block";
+                // ✅ สำเร็จ ล้าง sessionStorage แล้วไปหน้าประวัติ
+                sessionStorage.removeItem("pendingBooking");
+                toast("ส่งสลิปสำเร็จ! รอ Admin ตรวจสอบ", "success");
+                setTimeout(() => {
+                    window.location.href = "history.html";
+                }, 1500);
 
             } catch (err) {
                 console.error(err);
                 toast("ไม่สามารถเชื่อมต่อ Server ได้", "error");
                 btnSubmit.disabled    = false;
-                btnSubmit.textContent = "📤 ส่งสลิปการชำระเงิน";
+                btnSubmit.textContent = "✅ ยืนยันการจองและส่งสลิป";
             }
         });
     </script>

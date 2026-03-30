@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VANVAN — การจองของฉัน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-main.css">
+    <style>
+        .history-container {
+            max-width: 680px;
+            margin: 32px auto;
+            padding: 0 16px 48px;
+        }
+        .history-title {
+            font-family: var(--font-thai);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--color-black);
+            margin-bottom: 20px;
+        }
+
+        /* ── Booking Card ── */
+        .booking-item {
+            background: var(--color-white);
+            border-radius: 14px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .booking-item__header {
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .booking-item__route {
+            font-family: var(--font-thai);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--color-black);
+        }
+        .booking-item__date {
+            font-family: var(--font-thai);
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-family: var(--font-thai);
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-badge--pending       { background:#fff3e0; color:#e65100; }
+        .status-badge--slip_uploaded { background:#e3f2fd; color:#1565c0; }
+        .status-badge--confirmed     { background:#e8f5e9; color:#2e7d32; }
+        .status-badge--cancelled     { background:#ffebee; color:#c62828; }
+        .status-badge--expired       { background:#f5f5f5; color:#9e9e9e; }
+
+        .booking-item__body {
+            padding: 16px 20px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .booking-item__info-row {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .booking-item__label {
+            font-family: var(--font-thai);
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+        .booking-item__value {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-black);
+        }
+        .booking-item__value--price { color: var(--color-brand); }
+
+        /* Reject reason */
+        .reject-reason {
+            margin: 0 20px 14px;
+            background: #ffebee;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: var(--font-thai);
+            font-size: 13px;
+            color: #c62828;
+        }
+
+        /* ── E-Ticket ── */
+        .eticket {
+            margin: 0 20px 20px;
+            border: 2px dashed var(--color-brand);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .eticket__header {
+            background: var(--color-brand);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .eticket__brand {
+            font-family: var(--font-logo);
+            font-size: 20px;
+            color: white;
+            letter-spacing: 1px;
+        }
+        .eticket__status {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-family: var(--font-thai);
+            font-size: 12px;
+        }
+        .eticket__body {
+            padding: 16px 20px;
+            background: white;
+        }
+        .eticket__route {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .eticket__city {
+            font-family: var(--font-thai);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-black);
+        }
+        .eticket__arrow {
+            color: var(--color-brand);
+            font-size: 20px;
+        }
+        .eticket__details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .eticket__detail-label {
+            font-family: var(--font-thai);
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .eticket__detail-value {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-black);
+            margin-top: 2px;
+        }
+        .eticket__code {
+            background: var(--color-bg);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .eticket__code-label {
+            font-family: var(--font-thai);
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+        .eticket__code-value {
+            font-family: var(--font-ui);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-brand);
+            letter-spacing: 3px;
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            background: var(--color-white);
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        }
+        .empty-state__icon { font-size: 56px; margin-bottom: 16px; }
+        .empty-state__title {
+            font-family: var(--font-thai);
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .empty-state__msg {
+            font-family: var(--font-thai);
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 24px;
+        }
+        .btn-book-now {
+            display: inline-block;
+            padding: 12px 28px;
+            background: var(--color-brand);
+            color: white;
+            border-radius: var(--radius-btn);
+            font-family: var(--font-thai);
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-family: var(--font-thai);
+            color: var(--color-text-secondary);
+        }
+        .loading-spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--color-border);
+            border-top-color: var(--color-brand);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Slip image */
+        .slip-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-thai);
+            font-size: 13px;
+            color: var(--color-brand);
+            text-decoration: none;
+            padding: 0 20px 14px;
+        }
+        .slip-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M3 12h18M3 18h18" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <span class="navbar__mobile-title">การจองของฉัน</span>
+        <div class="navbar__left"><div class="logo"><span class="van-text">VANVAN</span></div></div>
+        <nav class="navbar__actions" id="nav-actions-desktop"></nav>
+    </header>
+
+    <nav class="nav-drawer" id="nav-drawer">
+        <div class="drawer__header">
+            <span class="drawer__logo">VANVAN</span>
+            <button class="drawer__close" id="drawer-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="drawer__body"><div id="nav-drawer-links"></div></div>
+    </nav>
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+
+    <div class="history-container">
+        <h1 class="history-title">📋 การจองของฉัน</h1>
+
+        <!-- Loading -->
+        <div class="loading" id="loading-state">
+            <div class="loading-spinner"></div>
+            <p>กำลังโหลด...</p>
+        </div>
+
+        <!-- Booking list -->
+        <div id="booking-list"></div>
+    </div>
+
+    <script type="module">
+        const API   = "http://localhost:3000/api";
+        const token = localStorage.getItem("token");
+
+        // ถ้าไม่ได้ login
+        if (!token) { window.location.href = "login.html"; }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleString("th-TH", {
+                year: "numeric", month: "long", day: "numeric",
+                hour: "2-digit", minute: "2-digit",
+                timeZone: "Asia/Bangkok"
+            });
+        }
+
+        function statusLabel(status) {
+            const map = {
+                pending:       { text: "รอชำระเงิน",       cls: "pending" },
+                slip_uploaded: { text: "รอ Admin ตรวจสอบ", cls: "slip_uploaded" },
+                confirmed:     { text: "ยืนยันแล้ว ✅",     cls: "confirmed" },
+                cancelled:     { text: "ยกเลิกแล้ว",        cls: "cancelled" },
+                expired:       { text: "หมดอายุ",           cls: "expired" },
+            };
+            return map[status] || { text: status, cls: "pending" };
+        }
+
+        function renderBookings(bookings) {
+            const listEl = document.getElementById("booking-list");
+
+            if (bookings.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon">🎫</div>
+                        <div class="empty-state__title">ยังไม่มีการจอง</div>
+                        <div class="empty-state__msg">คุณยังไม่เคยจองรถตู้กับเรา<br>เริ่มจองตอนนี้ได้เลย!</div>
+                        <a href="index.html" class="btn-book-now">ค้นหารอบรถ</a>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = bookings.map(b => {
+                const s      = statusLabel(b.status);
+                const depart = formatDate(b.depart_time);
+
+                // E-Ticket (เฉพาะ confirmed)
+                const eticket = b.status === "confirmed" ? `
+                    <div class="eticket">
+                        <div class="eticket__header">
+                            <span class="eticket__brand">VANVAN</span>
+                            <span class="eticket__status">✅ ยืนยันแล้ว</span>
+                        </div>
+                        <div class="eticket__body">
+                            <div class="eticket__route">
+                                <span class="eticket__city">${b.origin}</span>
+                                <span class="eticket__arrow">→</span>
+                                <span class="eticket__city">${b.destination}</span>
+                            </div>
+                            <div class="eticket__details">
+                                <div>
+                                    <div class="eticket__detail-label">วันเวลาออกรถ</div>
+                                    <div class="eticket__detail-value">${depart}</div>
+                                </div>
+                                <div>
+                                    <div class="eticket__detail-label">คนขับ</div>
+                                    <div class="eticket__detail-value">${b.driver_name || '-'}</div>
+                                </div>
+                                <div>
+                                    <div class="eticket__detail-label">ทะเบียนรถ</div>
+                                    <div class="eticket__detail-value">${b.plate_number || '-'}</div>
+                                </div>
+                                <div>
+                                    <div class="eticket__detail-label">ราคา</div>
+                                    <div class="eticket__detail-value">฿${Number(b.amount).toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div class="eticket__code">
+                                <span class="eticket__code-label">Ticket Code</span>
+                                <span class="eticket__code-value">${b.ticket_code}</span>
+                            </div>
+                        </div>
+                    </div>` : '';
+
+                // Reject reason
+                const rejectHtml = b.status === "cancelled" && b.reject_reason ? `
+                    <div class="reject-reason">❌ เหตุผล: ${b.reject_reason}</div>` : '';
+
+                // Slip link
+                const slipHtml = b.slip_image ? `
+                    <a href="${b.slip_image}" target="_blank" class="slip-link">
+                        🧾 ดูสลิปที่แนบ
+                    </a>` : '';
+
+                return `
+                <div class="booking-item">
+                    <div class="booking-item__header">
+                        <div>
+                            <div class="booking-item__route">${b.origin} → ${b.destination}</div>
+                            <div class="booking-item__date">${depart}</div>
+                        </div>
+                        <span class="status-badge status-badge--${s.cls}">${s.text}</span>
+                    </div>
+                    <div class="booking-item__body">
+                        <div class="booking-item__info-row">
+                            <span class="booking-item__label">ราคา</span>
+                            <span class="booking-item__value booking-item__value--price">฿${Number(b.amount).toLocaleString()}</span>
+                        </div>
+                        <div class="booking-item__info-row">
+                            <span class="booking-item__label">คนขับ</span>
+                            <span class="booking-item__value">${b.driver_name || '-'}</span>
+                        </div>
+                        <div class="booking-item__info-row">
+                            <span class="booking-item__label">ทะเบียนรถ</span>
+                            <span class="booking-item__value">${b.plate_number || '-'}</span>
+                        </div>
+                        <div class="booking-item__info-row">
+                            <span class="booking-item__label">วันที่จอง</span>
+                            <span class="booking-item__value">${formatDate(b.created_at)}</span>
+                        </div>
+                    </div>
+                    ${slipHtml}
+                    ${rejectHtml}
+                    ${eticket}
+                </div>`;
+            }).join("");
+        }
+
+        // โหลดประวัติการจอง
+        async function loadHistory() {
+            try {
+                const res  = await fetch(`${API}/bookings`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                document.getElementById("loading-state").style.display = "none";
+
+                if (!res.ok) {
+                    document.getElementById("booking-list").innerHTML =
+                        `<p style="font-family:var(--font-thai);color:#c62828;padding:20px">เกิดข้อผิดพลาด กรุณาลองใหม่</p>`;
+                    return;
+                }
+
+                renderBookings(data.data || []);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById("loading-state").style.display = "none";
+                document.getElementById("booking-list").innerHTML =
+                    `<p style="font-family:var(--font-thai);color:#c62828;padding:20px">ไม่สามารถเชื่อมต่อ Server ได้</p>`;
+            }
+        }
+
+        loadHistory();
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

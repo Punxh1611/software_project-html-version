@@ -9,9 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
     <style>
-        /* Dropdown + date input ภายใน hero field */
-        .hero__field-input select,
-        .hero__field-input input[type="date"] {
+        /* Dropdown */
+        .hero__field-input select {
             border: none;
             background: transparent;
             font-family: var(--font-thai);
@@ -23,20 +22,31 @@
             cursor: pointer;
             min-width: 0;
         }
+        .hero__field-input select option { font-weight: 400; }
+
+        /* Date input — ใช้ native picker เต็มๆ ไม่มีไอคอนทับ */
         .hero__field-input input[type="date"] {
-            width: 130px;
+            border: none;
+            background: transparent;
+            font-family: var(--font-ui);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--color-black);
+            outline: none;
+            flex: 1;
+            cursor: pointer;
+            min-width: 120px;
         }
-        .hero__field-input select option {
-            font-weight: 400;
+        .hero__field-input input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
         }
     </style>
 </head>
 <body>
 
-    <!-- Drawer Overlay -->
     <div class="drawer-overlay" id="drawer-overlay"></div>
 
-    <!-- Mobile Drawer -->
     <nav class="nav-drawer" id="nav-drawer">
         <div class="drawer__header">
             <span class="drawer__logo">VANVAN</span>
@@ -46,12 +56,9 @@
                 </svg>
             </button>
         </div>
-        <div class="drawer__body">
-            <div id="nav-drawer-links"></div>
-        </div>
+        <div class="drawer__body"><div id="nav-drawer-links"></div></div>
     </nav>
 
-    <!-- Navbar -->
     <header class="navbar">
         <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -71,7 +78,6 @@
         <nav class="navbar__actions" id="nav-actions-desktop"></nav>
     </header>
 
-    <!-- Hero Search -->
     <section class="hero">
         <div class="hero__overlay"></div>
         <div class="hero__search-box">
@@ -110,14 +116,10 @@
                     </div>
                 </div>
 
-                <!-- วันออกเดินทาง -->
+                <!-- วันออกเดินทาง — native date picker ไม่มีไอคอนทับ -->
                 <div class="hero__field">
                     <span class="hero__field-label">วันออกเดินทาง</span>
                     <div class="hero__field-input">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
-                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
                         <input type="date" id="field-date">
                     </div>
                 </div>
@@ -129,52 +131,56 @@
                         <path d="M16.5 16.5L21 21" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
                     </svg>
                 </button>
-
             </div>
         </div>
     </section>
 
-    <!-- Main Content -->
     <main class="main">
-        <section class="section-card">
 
+        <!-- ผลค้นหา — แสดงเหนือ Most pickup -->
+        <div id="search-results" style="display:none">
+            <section class="section-card" style="margin-bottom:16px">
+                <div class="section-card__header" style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <h2 class="upcoming-section__title">🔍 ผลการค้นหา</h2>
+                        <p class="upcoming-section__subtitle" id="search-result-count"></p>
+                    </div>
+                    <button id="btn-clear-search"
+                        style="background:none;border:1.5px solid var(--color-border);border-radius:8px;padding:6px 14px;font-family:var(--font-thai);font-size:13px;cursor:pointer;color:var(--color-text-secondary)">
+                        ✕ ล้างการค้นหา
+                    </button>
+                </div>
+                <div class="upcoming-list" id="search-list"></div>
+            </section>
+        </div>
+
+        <section class="section-card">
             <div class="section-card__header">
                 <h2 class="section-card__title">Most pickup</h2>
                 <p class="section-card__subtitle">เส้นทางยอดนิยม</p>
             </div>
 
-            <!-- Trip Cards — inject โดย main.js -->
             <div class="trip-grid" id="trip-grid">
                 <div class="trip-card">
-                    <div class="trip-card__img-placeholder">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                            <rect x="4" y="4" width="32" height="32" rx="4" stroke="#C0C0C0" stroke-width="2" fill="none"/>
-                        </svg>
-                    </div>
+                    <div class="trip-card__img-placeholder"></div>
                     <div class="trip-card__body">
                         <h3 class="trip-card__name" style="color:var(--color-text-tertiary)">กำลังโหลด...</h3>
                     </div>
                 </div>
             </div>
 
-            <!-- รอบที่ใกล้ออก -->
             <section class="upcoming-section">
                 <div class="upcoming-section__header">
                     <h2 class="upcoming-section__title">รอบที่ใกล้ออก</h2>
                     <p class="upcoming-section__subtitle">รอบเดินทางที่กำลังจะออกเร็วๆ นี้</p>
                 </div>
-                <!-- inject โดย main.js -->
                 <div class="upcoming-list" id="upcoming-list">
-                    <p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">
-                        กำลังโหลด...
-                    </p>
+                    <p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">กำลังโหลด...</p>
                 </div>
             </section>
-
         </section>
     </main>
 
     <script type="module" src="main.js"></script>
-
 </body>
 </html>

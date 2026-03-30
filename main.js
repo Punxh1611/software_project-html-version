@@ -2,7 +2,6 @@
 
 const API = "http://localhost:3000/api";
 
-// ── SVG Icons ─────────────────────────────────────────────────────
 const ICONS = {
     home:    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     booking: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
@@ -13,9 +12,27 @@ const ICONS = {
 };
 
 // ── Auth ──────────────────────────────────────────────────────────
-const getUser    = () => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } };
-const getToken   = () => localStorage.getItem("token");
-const isLoggedIn = () => !!getToken() && !!getUser();
+const getUser  = () => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } };
+const getToken = () => localStorage.getItem("token");
+
+function isLoggedIn() {
+    const token = getToken();
+    const user  = getUser();
+    if (!token || !user) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 < Date.now()) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            return false;
+        }
+    } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        return false;
+    }
+    return true;
+}
 
 function logout() {
     localStorage.removeItem("token");
@@ -40,7 +57,6 @@ function renderNavbar() {
             <span class="navbar__username">${user.username}</span>
             <button class="navbar__logout-btn" id="btn-logout">ออกจากระบบ</button>
         `;
-
         if (navMobile) navMobile.innerHTML = `
             <div class="drawer__user-card">
                 <div class="drawer__user-avatar">${avatarHTML}</div>
@@ -56,10 +72,8 @@ function renderNavbar() {
             <div class="drawer__divider"></div>
             <button class="drawer__link drawer__link--logout" id="btn-logout-mobile">${ICONS.logout}<span>ออกจากระบบ</span></button>
         `;
-
         document.getElementById("btn-logout")?.addEventListener("click", logout);
         document.getElementById("btn-logout-mobile")?.addEventListener("click", logout);
-
     } else {
         if (navDesktop) navDesktop.innerHTML = `
             <a class="navbar__a" href="#">Booking</a>
@@ -76,7 +90,7 @@ function renderNavbar() {
     }
 }
 
-// ── โหลด Routes + Schedules ───────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────────────
 let allRoutes    = [];
 let allSchedules = [];
 
@@ -86,14 +100,14 @@ async function loadData() {
             fetch(`${API}/routes`),
             fetch(`${API}/schedules`)
         ]);
-
-        allRoutes    = (await routesRes.json()).data    || [];
-        allSchedules = (await schedulesRes.json()).data || [];
+        const routesData    = await routesRes.json();
+        const schedulesData = await schedulesRes.json();
+        allRoutes    = Array.isArray(routesData)    ? routesData    : (routesData.data    || []);
+        allSchedules = Array.isArray(schedulesData) ? schedulesData : (schedulesData.data || []);
 
         populateDropdowns();
         renderTripCards();
         renderUpcomingList();
-
     } catch (err) {
         console.error("โหลดข้อมูลไม่ได้:", err);
     }
@@ -108,6 +122,10 @@ function populateDropdowns() {
     const toSel   = document.getElementById("field-to");
     if (!fromSel || !toSel) return;
 
+    // ล้าง option เดิม (ยกเว้น placeholder)
+    while (fromSel.options.length > 1) fromSel.remove(1);
+    while (toSel.options.length > 1)   toSel.remove(1);
+
     origins.forEach(o => {
         const opt = document.createElement("option");
         opt.value = o; opt.textContent = o;
@@ -121,75 +139,81 @@ function populateDropdowns() {
 }
 
 // ── Trip Cards ────────────────────────────────────────────────────
+const DEST_IMAGES = {
+    "พัทยา":     "Pattaya",
+    "ระยอง":     "Rayong",
+    "ชลบุรี":    "Chonburi",
+    "เชียงใหม่": "Chiangmai",
+    "หัวหิน":    "Huahin",
+};
+
 function renderTripCards() {
     const grid = document.getElementById("trip-grid");
     if (!grid) return;
 
-    // ใช้ schedules ที่มีคนขับ 3 อันแรก
     const featured = allSchedules.filter(s => s.driver_name).slice(0, 3);
-
     if (featured.length === 0) {
         grid.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary)">ยังไม่มีรอบรถในขณะนี้</p>`;
         return;
     }
 
     const colors = ["355872", "4A6D8C", "2C4A6E"];
-    grid.innerHTML = featured.map((s, i) => `
+    grid.innerHTML = featured.map((s, i) => {
+        const imgText = DEST_IMAGES[s.destination] || `Route${i + 1}`;
+        return `
         <div class="trip-card ${i === 0 ? 'trip-card--featured' : ''}">
             <div class="trip-card__img-wrapper">
-                <img src="https://placehold.co/277x169/${colors[i % 3]}/white?text=${s.destination}"
-                     alt="${s.destination}" class="trip-card__img"
-                     onerror="this.parentElement.innerHTML='<div class=trip-card__img-placeholder></div>'">
+                <img src="https://placehold.co/277x169/${colors[i % 3]}/white?text=${imgText}"
+                     alt="${s.destination}" class="trip-card__img">
             </div>
             <div class="trip-card__body">
                 <h3 class="trip-card__name">${s.destination}</h3>
                 <p class="trip-card__time">จาก ${s.origin} · ฿${Number(s.price).toLocaleString()}</p>
-                <button class="trip-card__btn"
-                    onclick="handleBook('${s.id}')">
-                    จอง
-                </button>
+                <button class="trip-card__btn" onclick="handleBook('${s.id}')">จอง</button>
             </div>
-        </div>
-    `).join("");
+        </div>`;
+    }).join("");
 }
 
-// ── Upcoming list ─────────────────────────────────────────────────
-function renderUpcomingList() {
+// ── Upcoming List ─────────────────────────────────────────────────
+function renderUpcomingList(schedules) {
     const list = document.getElementById("upcoming-list");
     if (!list) return;
 
-    const upcoming = allSchedules.filter(s => s.driver_name).slice(0, 5);
+    const data = schedules || allSchedules.filter(s => s.driver_name);
 
-    if (upcoming.length === 0) {
+    if (data.length === 0) {
         list.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px">ยังไม่มีรอบที่กำลังจะออก</p>`;
         return;
     }
 
-    list.innerHTML = upcoming.map(s => {
+    list.innerHTML = data.map(s => {
         const depart = new Date(s.depart_time);
         const diff   = depart - Date.now();
         const mins   = Math.floor(diff / 60000);
         let badge = "";
-        if (mins < 30)       badge = `<span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก ${mins} นาที</span>`;
-        else if (mins < 60)  badge = `<span class="upcoming-row__badge">ใกล้ออก ${mins} นาที</span>`;
-        else                 badge = `<span class="upcoming-row__badge">ออก ${Math.floor(mins/60)} ชม.</span>`;
+        if (mins < 0)       badge = `<span class="upcoming-row__badge">ออกแล้ว</span>`;
+        else if (mins < 30) badge = `<span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก ${mins} นาที</span>`;
+        else if (mins < 60) badge = `<span class="upcoming-row__badge">ใกล้ออก ${mins} นาที</span>`;
+        else                badge = `<span class="upcoming-row__badge">ออก ${Math.floor(mins/60)} ชม.</span>`;
 
-        const timeStr = depart.toLocaleTimeString("th-TH", { hour:"2-digit", minute:"2-digit" });
+        const timeStr = depart.toLocaleTimeString("th-TH", {
+            hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok"
+        });
 
         return `
-            <div class="upcoming-row">
-                ${badge}
-                <div class="upcoming-row__info">
-                    <span class="upcoming-row__route">${s.origin} → ${s.destination}</span>
-                    <span class="upcoming-row__time">วันนี้ · ${timeStr} น.</span>
-                </div>
-                <div class="upcoming-row__seats">
-                    <span class="upcoming-row__seats-count">${s.available_seats}</span>
-                    <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
-                </div>
-                <button class="upcoming-row__btn" onclick="handleBook('${s.id}')">จอง</button>
+        <div class="upcoming-row">
+            ${badge}
+            <div class="upcoming-row__info">
+                <span class="upcoming-row__route">${s.origin} → ${s.destination}</span>
+                <span class="upcoming-row__time">${depart.toLocaleDateString("th-TH")} · ${timeStr} น.</span>
             </div>
-        `;
+            <div class="upcoming-row__seats">
+                <span class="upcoming-row__seats-count">${s.available_seats}</span>
+                <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
+            </div>
+            <button class="upcoming-row__btn" onclick="handleBook('${s.id}')">จอง</button>
+        </div>`;
     }).join("");
 }
 
@@ -199,47 +223,73 @@ function doSearch() {
     const to   = document.getElementById("field-to")?.value;
     const date = document.getElementById("field-date")?.value;
 
+    const resultsDiv = document.getElementById("search-results");
+    const searchList = document.getElementById("search-list");
+    const countEl    = document.getElementById("search-result-count");
+
     let filtered = allSchedules.filter(s => s.driver_name);
     if (from) filtered = filtered.filter(s => s.origin === from);
     if (to)   filtered = filtered.filter(s => s.destination === to);
-    if (date) filtered = filtered.filter(s => {
-        const d = new Date(s.depart_time).toISOString().split("T")[0];
-        return d === date;
-    });
+    if (date) {
+        filtered = filtered.filter(s => {
+            const d = new Date(s.depart_time).toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+            return d === date;
+        });
+    }
 
-    // แสดงผลใน upcoming list
-    const list = document.getElementById("upcoming-list");
-    if (!list) return;
+    // แสดงผลค้นหาเหนือ Most pickup
+    resultsDiv.style.display = "block";
+    resultsDiv.scrollIntoView({ behavior: "smooth", block: "start" });
 
     if (filtered.length === 0) {
-        list.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">ไม่พบรอบที่ตรงกัน</p>`;
+        countEl.textContent = "ไม่พบรอบที่ตรงกัน";
+        searchList.innerHTML = `<p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">ลองเปลี่ยนเส้นทางหรือวันที่ใหม่</p>`;
         return;
     }
 
-    allSchedules = filtered;
-    renderUpcomingList();
+    countEl.textContent = `พบ ${filtered.length} รอบ`;
+    // render ลงใน search-list ไม่ใช่ upcoming-list
+    searchList.innerHTML = filtered.map(s => {
+        const depart = new Date(s.depart_time);
+        const diff   = depart - Date.now();
+        const mins   = Math.floor(diff / 60000);
+        let badge = "";
+        if (mins < 0)       badge = `<span class="upcoming-row__badge">ออกแล้ว</span>`;
+        else if (mins < 30) badge = `<span class="upcoming-row__badge upcoming-row__badge--soon">ใกล้ออก ${mins} นาที</span>`;
+        else if (mins < 60) badge = `<span class="upcoming-row__badge">ใกล้ออก ${mins} นาที</span>`;
+        else                badge = `<span class="upcoming-row__badge">ออก ${Math.floor(mins/60)} ชม.</span>`;
+        const timeStr = depart.toLocaleTimeString("th-TH", { hour:"2-digit", minute:"2-digit", timeZone:"Asia/Bangkok" });
+        return `
+        <div class="upcoming-row">
+            ${badge}
+            <div class="upcoming-row__info">
+                <span class="upcoming-row__route">${s.origin} → ${s.destination}</span>
+                <span class="upcoming-row__time">${depart.toLocaleDateString("th-TH")} · ${timeStr} น.</span>
+            </div>
+            <div class="upcoming-row__seats">
+                <span class="upcoming-row__seats-count">${s.available_seats}</span>
+                <span class="upcoming-row__seats-label">ที่นั่งเหลือ</span>
+            </div>
+            <button class="upcoming-row__btn" onclick="handleBook('${s.id}')">จอง</button>
+        </div>`;
+    }).join("");
 }
 
 // ── handleBook ────────────────────────────────────────────────────
 function handleBook(scheduleId) {
-    if (!isLoggedIn()) {
-        window.location.href = `login.html`;
-        return;
-    }
+    if (!isLoggedIn()) { window.location.href = "login.html"; return; }
     window.location.href = `booking.html?schedule_id=${scheduleId}`;
 }
 window.handleBook = handleBook;
 
 // ── Drawer ────────────────────────────────────────────────────────
 function initDrawer() {
-    const hamburger  = document.getElementById("hamburger-btn");
-    const drawer     = document.getElementById("nav-drawer");
-    const overlay    = document.getElementById("drawer-overlay");
-    const closeBtn   = document.getElementById("drawer-close");
-
+    const hamburger = document.getElementById("hamburger-btn");
+    const drawer    = document.getElementById("nav-drawer");
+    const overlay   = document.getElementById("drawer-overlay");
+    const closeBtn  = document.getElementById("drawer-close");
     const open  = () => { drawer?.classList.add("open"); overlay?.classList.add("active"); document.body.style.overflow = "hidden"; };
     const close = () => { drawer?.classList.remove("open"); overlay?.classList.remove("active"); document.body.style.overflow = ""; };
-
     hamburger?.addEventListener("click", open);
     closeBtn?.addEventListener("click", close);
     overlay?.addEventListener("click", close);
@@ -250,7 +300,7 @@ function initDrawer() {
 function initDate() {
     const dateInput = document.getElementById("field-date");
     if (!dateInput) return;
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
     dateInput.value = today;
     dateInput.min   = today;
 }
@@ -261,9 +311,11 @@ function initSwap() {
         const from = document.getElementById("field-from");
         const to   = document.getElementById("field-to");
         if (!from || !to) return;
-        const tmp  = from.value;
-        from.value = to.value;
-        to.value   = tmp;
+        // ✅ เก็บค่าปัจจุบันก่อนสลับ
+        const fromVal = from.value;
+        const toVal   = to.value;
+        from.value = toVal;
+        to.value   = fromVal;
     });
 }
 
@@ -274,6 +326,20 @@ document.addEventListener("DOMContentLoaded", () => {
     initSwap();
     initDate();
     loadData();
-
     document.getElementById("search-btn")?.addEventListener("click", doSearch);
+
+    // ปุ่มล้างผลค้นหา
+    document.getElementById("btn-clear-search")?.addEventListener("click", () => {
+        document.getElementById("search-results").style.display = "none";
+        document.getElementById("search-list").innerHTML = "";
+        document.getElementById("field-from").value = "";
+        document.getElementById("field-to").value   = "";
+        initDate();
+    });
+    // กด Enter ค้นหาได้เลย
+    ["field-from","field-to","field-date"].forEach(id => {
+        document.getElementById(id)?.addEventListener("keydown", e => {
+            if (e.key === "Enter") doSearch();
+        });
+    });
 });
