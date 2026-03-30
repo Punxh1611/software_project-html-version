@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Van Driver App</title>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,15 +60,35 @@
         <!-- Scan Page -->
         <div id="scan-page" class="page">
           <div class="scan-container">
-            <div class="scan-frame">
-              <div class="scan-overlay"></div>
-              <div class="scan-line"></div>
-              <i data-lucide="qr-code" style="width:120px;height:120px;opacity:0.2;position:absolute;inset:0;margin:auto;"></i>
+            <!-- Camera viewfinder -->
+            <div class="scan-frame" id="scan-frame-box">
+              <video id="camera-video" autoplay playsinline muted></video>
+              <canvas id="camera-canvas" style="display:none;"></canvas>
+              <!-- Corner brackets -->
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+              <div class="scan-line" id="scan-line-anim"></div>
             </div>
+
             <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">สแกน QR Code</h2>
-            <p style="font-size:14px;opacity:0.6;margin-bottom:32px;">วางตั๋วผู้โดยสารให้ตรงกับกรอบเพื่อตรวจสอบ</p>
-            <button class="btn-primary" style="width:100%;max-width:280px;" id="simulate-scan-btn">จำลองการสแกนสำเร็จ</button>
-            <button class="btn-secondary" style="margin-top:16px;width:100%;max-width:280px;" id="cancel-scan-btn">ยกเลิก</button>
+            <p id="scan-status-text" style="font-size:14px;opacity:0.6;margin-bottom:24px;">เปิดกล้องเพื่อสแกนตั๋วผู้โดยสาร</p>
+
+            <!-- Result card (hidden until scan) -->
+            <div id="scan-result-card" style="display:none;width:100%;max-width:320px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:16px;margin-bottom:20px;text-align:left;">
+              <p style="font-size:10px;opacity:0.6;text-transform:uppercase;margin-bottom:8px;">ผลการสแกน</p>
+              <p id="scan-result-name" style="font-size:16px;font-weight:700;"></p>
+              <p id="scan-result-ticket" style="font-size:12px;opacity:0.6;margin-top:2px;"></p>
+              <p id="scan-result-status" style="font-size:12px;font-weight:700;margin-top:8px;"></p>
+            </div>
+
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:280px;">
+              <button class="btn-primary" style="width:100%;" id="start-camera-btn">
+                <i data-lucide="camera" style="width:18px;height:18px;"></i> เปิดกล้อง
+              </button>
+              <button class="btn-secondary" style="width:100%;color:white;" id="cancel-scan-btn">ยกเลิก</button>
+            </div>
           </div>
         </div>
 

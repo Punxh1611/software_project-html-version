@@ -1,3 +1,14 @@
+// ===== CONFIG: แก้ข้อมูลคนขับตรงนี้ =====
+      const DRIVER = {
+        name: 'คุณวิชัย รักงาน',        // ← ใส่ชื่อจริงจาก DB
+        displayName: 'คุณวิชัย (คนขับ)', // ← ชื่อบนหน้าแรก
+        initial: 'W',                     // ← ตัวอักษรใน avatar
+        id: 'DRV-882',                    // ← รหัสพนักงาน
+        rating: '4.9/5.0',
+        experience: '2 ปี',
+      };
+      // ==========================================
+
       const MOCK_TRIPS = [
         {
           id: 'T101', route: 'Bangkok - Pattaya', time: '08:30',
@@ -28,7 +39,25 @@
       const mainHeader = document.getElementById('main-header');
       const bottomNav = document.querySelector('.bottom-nav');
 
+      let cameraStream = null;
+      let scanInterval = null;
+      let scanLocked = false;
+
       function init() {
+        // Apply driver info from config
+        document.querySelector('.welcome-text h2').textContent = DRIVER.displayName;
+        document.querySelectorAll('.avatar').forEach(el => { el.textContent = DRIVER.initial; });
+        const profileName = document.querySelector('#profile-page .card h2');
+        if (profileName) profileName.textContent = DRIVER.name;
+        const profileId = document.querySelector('#profile-page .card p');
+        if (profileId) profileId.textContent = `พนักงานขับรถ (ID: ${DRIVER.id})`;
+        const ratingEl = document.querySelector('#profile-page .card [data-rating]');
+        // update stats in profile
+        document.querySelectorAll('#profile-page .card p[style*="18px"]').forEach((el, i) => {
+          if (i === 0) el.textContent = DRIVER.rating;
+          if (i === 1) el.textContent = DRIVER.experience;
+        });
+
         renderHome();
         renderSchedule();
 
@@ -38,13 +67,17 @@
 
         backBtn.addEventListener('click', closeDetail);
         document.getElementById('detail-back-btn').addEventListener('click', closeDetail);
-        document.getElementById('simulate-scan-btn').addEventListener('click', simulateScan);
-        document.getElementById('cancel-scan-btn').addEventListener('click', () => switchTab('home'));
+        document.getElementById('start-camera-btn').addEventListener('click', startCamera);
+        document.getElementById('cancel-scan-btn').addEventListener('click', () => {
+          stopCamera();
+          switchTab('home');
+        });
 
         lucide.createIcons();
       }
 
       function switchTab(tab) {
+        if (activeTab === 'scan' && tab !== 'scan') stopCamera();
         activeTab = tab;
 
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -125,7 +158,7 @@
             Scheduled: { cls: 'yellow', text: 'รอออกรถ' },
             Departed:  { cls: 'blue',   text: 'กำลังเดินทาง' },
             Arrived:   { cls: 'green',  text: 'ถึงแล้ว' },
-            Cancelled: { cls: 'yellow', text: 'ยกเลิก' },
+            Cancelled: { cls: 'red', text: 'ยกเลิก' },
           };
           const s = statusMap[trip.status] || statusMap.Scheduled;
           const div = document.createElement('div');
@@ -243,17 +276,131 @@
         if (selectedTripId === tripId) openDetail(tripId);
       }
 
-      function simulateScan() {
-        const nextTrip = currentTrips.find(t => t.status !== 'Arrived');
-        if (!nextTrip) { alert('ไม่มีเที่ยวที่กำลังดำเนินการ'); return; }
-        const unverified = nextTrip.passengers.find(p => !p.verified);
-        if (unverified) {
-          verifyPassenger(nextTrip.id, unverified.id);
-          alert(`✅ สแกนสำเร็จ: ${unverified.name} (ที่นั่ง ${unverified.seat})`);
-          switchTab('home');
-        } else {
-          alert('ไม่พบข้อมูลตั๋ว หรือตั๋วถูกใช้งานแล้ว');
+      // ===== Camera & QR =====
+      async function startCamera() {
+        const btn = document.getElementById('start-camera-btn');
+        const statusText = document.getElementById('scan-status-text');
+        const video = document.getElementById('camera-video');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" style="width:18px;height:18px;"></i> กำลังเปิดกล้อง...';
+        lucide.createIcons();
+
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+          video.srcObject = cameraStream;
+          await video.play();
+
+          statusText.textContent = 'วางตั๋วผู้โดยสารให้ตรงกับกรอบ';
+          btn.style.display = 'none';
+          scanLocked = false;
+
+          // hide result card from previous scan
+          document.getElementById('scan-result-card').style.display = 'none';
+
+          // Start QR scanning loop
+          scanInterval = setInterval(scanQRFromCamera, 200);
+        } catch (err) {
+          console.error(err);
+          statusText.textContent = '❌ ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้อง';
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="camera" style="width:18px;height:18px;"></i> ลองอีกครั้ง';
+          lucide.createIcons();
         }
+      }
+
+      function stopCamera() {
+        if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(t => t.stop());
+          cameraStream = null;
+        }
+        const video = document.getElementById('camera-video');
+        video.srcObject = null;
+
+        // Reset UI
+        const btn = document.getElementById('start-camera-btn');
+        btn.style.display = 'flex';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="camera" style="width:18px;height:18px;"></i> เปิดกล้อง';
+        document.getElementById('scan-status-text').textContent = 'เปิดกล้องเพื่อสแกนตั๋วผู้โดยสาร';
+        lucide.createIcons();
+      }
+
+      function scanQRFromCamera() {
+        if (scanLocked) return;
+        const video = document.getElementById('camera-video');
+        const canvas = document.getElementById('camera-canvas');
+        if (!video.videoWidth) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+
+        if (code) {
+          scanLocked = true;
+          handleScannedQR(code.data);
+        }
+      }
+
+      function handleScannedQR(qrData) {
+        stopCamera();
+
+        // QR format expected: ticketId (e.g. "TIC-001")
+        // Or JSON: {"ticketId":"TIC-001"} — support both
+        let ticketId = qrData.trim();
+        try {
+          const parsed = JSON.parse(qrData);
+          if (parsed.ticketId) ticketId = parsed.ticketId;
+        } catch(e) {}
+
+        // Search across all trips
+        let foundTrip = null, foundPassenger = null;
+        for (const trip of currentTrips) {
+          const p = trip.passengers.find(p => p.ticketId === ticketId);
+          if (p) { foundTrip = trip; foundPassenger = p; break; }
+        }
+
+        const resultCard = document.getElementById('scan-result-card');
+        const resultName = document.getElementById('scan-result-name');
+        const resultTicket = document.getElementById('scan-result-ticket');
+        const resultStatus = document.getElementById('scan-result-status');
+        const statusText = document.getElementById('scan-status-text');
+
+        resultCard.style.display = 'block';
+
+        if (!foundPassenger) {
+          resultName.textContent = 'ไม่พบข้อมูลตั๋ว';
+          resultTicket.textContent = `QR: ${ticketId}`;
+          resultStatus.textContent = '❌ ตั๋วไม่ถูกต้อง';
+          resultStatus.style.color = '#ff4444';
+          statusText.textContent = 'สแกนไม่สำเร็จ';
+        } else if (foundPassenger.verified) {
+          resultName.textContent = foundPassenger.name;
+          resultTicket.textContent = `${foundPassenger.ticketId} · ที่นั่ง ${foundPassenger.seat}`;
+          resultStatus.textContent = '⚠️ ตั๋วถูกใช้งานแล้ว';
+          resultStatus.style.color = '#f39c12';
+          statusText.textContent = 'ตั๋วนี้เช็คอินแล้ว';
+        } else {
+          verifyPassenger(foundTrip.id, foundPassenger.id);
+          resultName.textContent = foundPassenger.name;
+          resultTicket.textContent = `${foundPassenger.ticketId} · ที่นั่ง ${foundPassenger.seat}`;
+          resultStatus.textContent = '✅ เช็คอินสำเร็จ!';
+          resultStatus.style.color = '#27ae60';
+          statusText.textContent = `เส้นทาง: ${foundTrip.route}`;
+        }
+
+        // Show re-scan button
+        const btn = document.getElementById('start-camera-btn');
+        btn.style.display = 'flex';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="refresh-cw" style="width:18px;height:18px;"></i> สแกนอีกครั้ง';
+        lucide.createIcons();
       }
 
       window.onload = init;
