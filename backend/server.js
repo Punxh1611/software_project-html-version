@@ -26,6 +26,7 @@ app.use('/api/routes',    require('./routes/routes'));
 app.use('/api/schedules', require('./routes/schedules'));
 app.use('/api/bookings',  require('./routes/bookings'));
 app.use('/api/admin',     require('./routes/admin'));
+app.use('/api/driver',    require('./routes/driver'));  // ← เพิ่มตรงนี้
 
 // ── เสิร์ฟไฟล์ Frontend ───────────────────────────────
 app.use(express.static(path.join(__dirname, '..')));
