@@ -1,33 +1,33 @@
 // routes/admin.js
-// หน้าที่: จัดการระบบสำหรับ Admin เท่านั้น
-// - เพิ่ม/แก้ไข/ปิดเส้นทาง
-// - สร้างบัญชีคนขับ
-// - ดูรายการรอตรวจสลิป
-// - ดู Dashboard
-
 const express                    = require('express');
 const router                     = express.Router();
 const pool                       = require('../db');
 const bcrypt                     = require('bcryptjs');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
-// ทุก route ต้องเป็น Admin
 router.use(verifyToken, requireRole('admin'));
 
 // ── GET /api/admin/dashboard ──────────────────────────
-// ดูภาพรวมระบบ
 router.get('/dashboard', async (req, res) => {
     try {
-        const [users, bookings, pendingSlips, schedules] = await Promise.all([
+        const [users, bookings, pendingSlips, schedules, revenue, popularRoutes] = await Promise.all([
             pool.query("SELECT COUNT(*) FROM users WHERE role = 'user'"),
             pool.query("SELECT COUNT(*), status FROM bookings GROUP BY status"),
             pool.query("SELECT COUNT(*) FROM bookings WHERE status = 'slip_uploaded'"),
             pool.query("SELECT COUNT(*) FROM van_schedules WHERE status = 'available'"),
+            pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM bookings WHERE status = 'confirmed'"),
+            // สถิติเส้นทางยอดนิยมวันนี้
+            pool.query(`
+                SELECT r.origin, r.destination, COUNT(b.id) as passenger_count
+                FROM bookings b
+                JOIN van_schedules s ON s.id = b.schedule_id
+                JOIN routes r ON r.id = s.route_id
+                WHERE b.status = 'confirmed'
+                AND DATE(s.depart_time) = CURRENT_DATE
+                GROUP BY r.origin, r.destination
+                ORDER BY passenger_count DESC
+            `)
         ]);
-
-        const revenue = await pool.query(
-            "SELECT COALESCE(SUM(amount), 0) as total FROM bookings WHERE status = 'confirmed'"
-        );
 
         res.json({
             success: true,
@@ -37,6 +37,7 @@ router.get('/dashboard', async (req, res) => {
                 pending_slips:    parseInt(pendingSlips.rows[0].count),
                 active_schedules: parseInt(schedules.rows[0].count),
                 total_revenue:    parseFloat(revenue.rows[0].total),
+                popular_routes:   popularRoutes.rows,
             }
         });
 
@@ -47,10 +48,9 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // ── POST /api/admin/routes ────────────────────────────
-// เพิ่มเส้นทางใหม่
 router.post('/routes', async (req, res) => {
     try {
-        const { origin, destination, price } = req.body;
+        const { origin, destination, destination_en, price, estimated_hours } = req.body;
 
         if (!origin || !destination || !price) {
             return res.status(400).json({ message: 'กรุณากรอกข้อมูลให้ครบ' });
@@ -60,10 +60,10 @@ router.post('/routes', async (req, res) => {
         }
 
         const result = await pool.query(`
-            INSERT INTO routes (origin, destination, price, created_by)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO routes (origin, destination, destination_en, price, estimated_hours)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
-        `, [origin, destination, price, req.user.id]);
+        `, [origin, destination, destination_en || null, price, estimated_hours || null]);
 
         res.status(201).json({
             success: true,
@@ -78,18 +78,18 @@ router.post('/routes', async (req, res) => {
 });
 
 // ── PATCH /api/admin/routes/:id ───────────────────────
-// แก้ไขราคา หรือปิดเส้นทาง
 router.patch('/routes/:id', async (req, res) => {
     try {
-        const { price, is_active } = req.body;
+        const { price, estimated_hours, is_active } = req.body;
 
         const result = await pool.query(`
             UPDATE routes SET
-                price     = COALESCE($1, price),
-                is_active = COALESCE($2, is_active)
-            WHERE id = $3
+                price           = COALESCE($1, price),
+                estimated_hours = COALESCE($2, estimated_hours),
+                is_active       = COALESCE($3, is_active)
+            WHERE id = $4
             RETURNING *
-        `, [price, is_active, req.params.id]);
+        `, [price, estimated_hours, is_active, req.params.id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'ไม่พบเส้นทางนี้' });
@@ -108,7 +108,6 @@ router.patch('/routes/:id', async (req, res) => {
 });
 
 // ── POST /api/admin/drivers ───────────────────────────
-// สร้างบัญชีคนขับใหม่
 router.post('/drivers', async (req, res) => {
     const client = await pool.connect();
     try {
@@ -121,30 +120,38 @@ router.post('/drivers', async (req, res) => {
             return res.status(400).json({ message: 'กรุณากรอกข้อมูลให้ครบ' });
         }
 
-        // ตรวจสอบซ้ำ
+        // ตรวจ email ซ้ำ
         const exist = await client.query(
-            'SELECT id FROM users WHERE username = $1 OR email = $2',
-            [username, email]
+            'SELECT id FROM users WHERE email = $1',
+            [email]
         );
         if (exist.rows.length > 0) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ message: 'Username หรือ Email นี้มีอยู่แล้ว' });
+            return res.status(409).json({ message: 'Email นี้มีอยู่แล้ว' });
         }
 
-        // สร้าง User
+        // สร้าง User (ไม่มี full_name, phone ใน users แล้ว)
         const hashed = await bcrypt.hash(password, 10);
         const userResult = await client.query(`
-            INSERT INTO users (username, email, password, role, full_name, phone)
-            VALUES ($1, $2, $3, 'driver', $4, $5)
+            INSERT INTO users (username, email, password, role)
+            VALUES ($1, $2, $3, 'driver')
             RETURNING id, username, email, role
-        `, [username, email, hashed, full_name, phone]);
+        `, [username, email, hashed]);
 
-        // สร้าง Driver Profile
+        // สร้าง Driver พร้อม full_name, phone
         const driverResult = await client.query(`
-            INSERT INTO drivers (user_id, license_no, plate_number, van_capacity)
+            INSERT INTO drivers (user_id, full_name, phone, license_no)
             VALUES ($1, $2, $3, $4)
             RETURNING *
-        `, [userResult.rows[0].id, license_no, plate_number, van_capacity || 13]);
+        `, [userResult.rows[0].id, full_name || null, phone || null, license_no]);
+
+        // สร้าง Van
+        if (plate_number) {
+            await client.query(`
+                INSERT INTO vans (plate_number, capacity)
+                VALUES ($1, $2)
+            `, [plate_number, van_capacity || 14]);
+        }
 
         await client.query('COMMIT');
 
@@ -167,20 +174,29 @@ router.post('/drivers', async (req, res) => {
 });
 
 // ── GET /api/admin/drivers ────────────────────────────
-// ดูรายชื่อคนขับทั้งหมด
 router.get('/drivers', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT 
-                d.*,
+            SELECT
+                d.id,
+                d.full_name,
+                d.phone,
+                d.license_no,
                 u.username,
                 u.email,
-                u.full_name,
-                u.phone,
-                u.is_active
+                u.is_banned,
+                u.violation_count,
+                (
+                    SELECT v.plate_number
+                    FROM van_schedules vs
+                    JOIN vans v ON v.id = vs.van_id
+                    WHERE vs.driver_id = d.id AND vs.van_id IS NOT NULL
+                    ORDER BY vs.depart_time DESC
+                    LIMIT 1
+                ) AS plate_number
             FROM drivers d
             JOIN users u ON u.id = d.user_id
-            ORDER BY d.created_at DESC
+            ORDER BY d.full_name
         `);
 
         res.json({ success: true, data: result.rows });
@@ -192,15 +208,18 @@ router.get('/drivers', async (req, res) => {
 });
 
 // ── GET /api/admin/slips ──────────────────────────────
-// ดูรายการสลิปที่รอตรวจสอบ
 router.get('/slips', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT 
-                b.*,
+            SELECT
+                b.id,
+                b.amount,
+                b.status,
+                b.slip_image,
+                b.expires_at,
+                b.reject_reason,
+                b.ticket_code,
                 u.username,
-                u.full_name,
-                u.email,
                 r.origin,
                 r.destination,
                 s.depart_time
@@ -209,7 +228,7 @@ router.get('/slips', async (req, res) => {
             JOIN van_schedules s ON s.id = b.schedule_id
             JOIN routes r ON r.id = s.route_id
             WHERE b.status = 'slip_uploaded'
-            ORDER BY b.created_at ASC
+            ORDER BY b.expires_at ASC
         `);
 
         res.json({ success: true, data: result.rows });
@@ -221,16 +240,19 @@ router.get('/slips', async (req, res) => {
 });
 
 // ── GET /api/admin/bookings ───────────────────────────
-// ดูการจองทั้งหมด
 router.get('/bookings', async (req, res) => {
     try {
         const { status } = req.query;
 
         let query = `
-            SELECT 
-                b.*,
+            SELECT
+                b.id,
+                b.amount,
+                b.status,
+                b.slip_image,
+                b.reject_reason,
+                b.ticket_code,
                 u.username,
-                u.full_name,
                 r.origin,
                 r.destination,
                 s.depart_time
@@ -246,9 +268,38 @@ router.get('/bookings', async (req, res) => {
             params.push(status);
         }
 
-        query += ' ORDER BY b.created_at DESC';
+        query += ' ORDER BY s.depart_time DESC';
 
         const result = await pool.query(query, params);
+        res.json({ success: true, data: result.rows });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'เกิดข้อผิดพลาด' });
+    }
+});
+
+// ── GET /api/admin/stats/routes ──────────────────────
+// สถิติเส้นทาง วันนี้มีคนไปที่ไหนมากที่สุด/น้อยที่สุด
+router.get('/stats/routes', async (req, res) => {
+    try {
+        const { date } = req.query;
+        const targetDate = date || 'CURRENT_DATE';
+
+        const result = await pool.query(`
+            SELECT
+                r.origin,
+                r.destination,
+                COUNT(b.id) as passenger_count
+            FROM bookings b
+            JOIN van_schedules s ON s.id = b.schedule_id
+            JOIN routes r ON r.id = s.route_id
+            WHERE b.status = 'confirmed'
+            AND DATE(s.depart_time) = $1
+            GROUP BY r.origin, r.destination
+            ORDER BY passenger_count DESC
+        `, [date || new Date().toISOString().slice(0, 10)]);
+
         res.json({ success: true, data: result.rows });
 
     } catch (err) {

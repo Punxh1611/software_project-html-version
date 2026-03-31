@@ -146,21 +146,28 @@ router.get('/', verifyToken, requireRole('user'), async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT
-                b.*,
+                b.id,
+                b.amount,
+                b.status,
+                b.slip_image,
+                b.expires_at,
+                b.reject_reason,
+                b.ticket_code,
                 r.origin,
                 r.destination,
                 r.price,
+                r.estimated_hours,
                 s.depart_time,
                 s.status AS schedule_status,
-                u.full_name AS driver_name,
-                d.plate_number
+                d.full_name AS driver_name,
+                v.plate_number
             FROM bookings b
             JOIN van_schedules s ON s.id = b.schedule_id
             JOIN routes r ON r.id = s.route_id
             LEFT JOIN drivers d ON d.id = s.driver_id
-            LEFT JOIN users u ON u.id = d.user_id
+            LEFT JOIN vans v ON v.id = s.van_id
             WHERE b.user_id = $1
-            ORDER BY b.created_at DESC
+            ORDER BY s.depart_time DESC
         `, [req.user.id]);
 
         res.json({ success: true, data: result.rows });
@@ -204,13 +211,11 @@ router.post('/:id/verify', verifyToken, requireRole('admin'), async (req, res) =
             const ticketCode = generateTicketCode();
             const result = await client.query(`
                 UPDATE bookings SET
-                    status = 'confirmed',
-                    ticket_code = $1,
-                    slip_verified_by = $2,
-                    slip_verified_at = NOW()
-                WHERE id = $3
+                    status      = 'confirmed',
+                    ticket_code = $1
+                WHERE id = $2
                 RETURNING *
-            `, [ticketCode, req.user.id, req.params.id]);
+            `, [ticketCode, req.params.id]);
 
             await client.query('COMMIT');
             res.json({
@@ -222,12 +227,10 @@ router.post('/:id/verify', verifyToken, requireRole('admin'), async (req, res) =
         } else {
             await client.query(`
                 UPDATE bookings SET
-                    status = 'cancelled',
-                    reject_reason = $1,
-                    slip_verified_by = $2,
-                    slip_verified_at = NOW()
-                WHERE id = $3
-            `, [reject_reason || 'สลิปไม่ถูกต้อง', req.user.id, req.params.id]);
+                    status        = 'rejected',
+                    reject_reason = $1
+                WHERE id = $2
+            `, [reject_reason || 'สลิปไม่ถูกต้อง', req.params.id]);
 
             await client.query(`
                 UPDATE van_schedules
@@ -238,7 +241,6 @@ router.post('/:id/verify', verifyToken, requireRole('admin'), async (req, res) =
 
             await client.query('COMMIT');
 
-            // ✅ ลบรูปสลิปออกจาก Supabase Storage เพื่อประหยัดพื้นที่
             if (b.slip_image) {
                 try {
                     const filename = b.slip_image.split('/').pop();

@@ -45,10 +45,10 @@ function validate() {
     let ok = true;
 
     if (!username) {
-        setError("username", "⚠ กรุณากรอก Username หรือ Email");
+        setError("username", "⚠ กรุณากรอก Email");
         ok = false;
-    } else if (username.length < 3) {
-        setError("username", "⚠ ต้องมีอย่างน้อย 3 ตัวอักษร");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username)) {
+        setError("username", "⚠ รูปแบบ Email ไม่ถูกต้อง");
         ok = false;
     } else {
         setOk("username");
@@ -98,7 +98,7 @@ async function doLogin() {
             } else {
                 setError("username", "⚠ " + data.message);
             }
-            toast(data.message, "error");
+            toast(data.message, "warning");
             return;
         }
 

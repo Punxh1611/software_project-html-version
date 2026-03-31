@@ -88,7 +88,7 @@ router.post('/login', async (req, res) => {
                 username:  user.username,
                 email:     user.email,
                 role:      user.role,
-                photo_url: user.photo_url,
+                is_banned: user.is_banned,
             }
         });
 

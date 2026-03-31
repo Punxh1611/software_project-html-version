@@ -7,25 +7,26 @@
 
 /* ── Variables ── */
 :root {
-    --color-brand:          #355872;
-    --color-bg:             #F3F3F3;
+    --color-brand:          #1B4F72;
+    --color-brand-mid:      #2E86C1;
+    --color-bg:             #EAF4FB;
     --color-white:          #FFFFFF;
     --color-black:          #1E1E1E;
-    --color-text-secondary: #757575;
+    --color-text-secondary: #6b7a99;
     --color-text-tertiary:  #B3B3B3;
-    --color-border:         #D9D9D9;
+    --color-border:         #d0e4f5;
     --color-neutral-bg:     #E3E3E3;
     --color-neutral-border: #767676;
     --color-soon:           #D9534F;
 
-    --font-logo: 'Bacasime Antique', serif;
+    --font-logo: 'Alexandria', sans-serif;
     --font-thai: 'IBM Plex Sans Thai', sans-serif;
-    --font-ui:   'Inter', sans-serif;
+    --font-ui:   'DM Sans', sans-serif;
 
     --navbar-height: 64px;
-    --shadow-navbar: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    --shadow-navbar: 0px 4px 12px rgba(27,79,114,0.25);
     --radius-pill:   9999px;
-    --radius-btn:    8px;
+    --radius-btn:    12px;
 }
 
 /* ── Base ── */
@@ -83,9 +84,10 @@ body {
 
 .logo .van-text {
     font-family: var(--font-logo);
-    font-size: 32px;
+    font-size: 28px;
+    font-weight: 900;
     color: var(--color-white);
-    letter-spacing: 1px;
+    letter-spacing: 3px;
 }
 
 nav.navbar__actions {
@@ -173,23 +175,48 @@ nav.navbar__actions {
 
 /* ════════ HERO SEARCH ════════ */
 .hero {
-    background: var(--color-brand);
+    background: linear-gradient(135deg, #1B4F72 0%, #2E86C1 100%);
     padding: 24px 16px 32px;
+    position: relative;
+    overflow: visible;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    top: -100px; right: -80px;
+    pointer-events: none;
+}
+
+.hero::after {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    bottom: -60px; left: 20px;
+    pointer-events: none;
 }
 
 .hero__overlay { display: none; }
 
 .hero__search-box {
     background: var(--color-white);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 32px rgba(27,79,114,0.25);
+    position: relative;
+    z-index: 10;
+    overflow: visible;
 }
 
 .hero__search-row {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .hero__field {
@@ -200,9 +227,11 @@ nav.navbar__actions {
 
 .hero__field-label {
     font-family: var(--font-thai);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--color-text-secondary);
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .hero__field-input {
@@ -210,14 +239,24 @@ nav.navbar__actions {
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-btn);
-    background: var(--color-white);
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px;
+    background: #f8fbff;
     color: var(--color-black);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hero__field-input:focus-within {
+    border-color: var(--color-brand-mid);
+    box-shadow: 0 0 0 3px rgba(46,134,193,0.12);
+    background: #fff;
 }
 
 .hero__field-input svg { flex-shrink: 0; color: var(--color-brand); }
 .hero__field-input--muted { background: var(--color-bg); }
+
+.datepicker-wrapper { flex: 1; min-width: 0; position: relative; }
+.datepicker-input { display: flex; align-items: center; width: 100%; cursor: pointer; height: 24px; }
 
 .hero__field-content {
     display: flex;
@@ -299,6 +338,10 @@ nav.navbar__actions {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    background: var(--color-white);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(27,79,114,0.08);
 }
 
 .section-card__header {
@@ -320,7 +363,34 @@ nav.navbar__actions {
     color: var(--color-text-secondary);
 }
 
-/* ════════ TRIP GRID + CARDS ════════ */
+/* ════════ TABS ════════ */
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.tab-btn:hover { color: var(--color-brand); }
+.tab-btn--active {
+    color: var(--color-brand);
+    border-bottom-color: var(--color-brand);
+}
+
+/* ════════ CLEAR BUTTON HOVER ════════ */
+#btn-clear-search:hover {
+    background: var(--color-bg) !important;
+    border-color: var(--color-brand) !important;
+    color: var(--color-brand) !important;
+}
+
+
 .trip-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -398,7 +468,7 @@ nav.navbar__actions {
     align-self: flex-start;
     margin-top: 4px;
     padding: 8px 20px;
-    background: var(--color-brand);
+    background: #2e7d32;
     color: var(--color-white);
     border: none;
     border-radius: var(--radius-btn);
@@ -408,7 +478,7 @@ nav.navbar__actions {
     cursor: pointer;
     transition: background 0.2s;
 }
-.trip-card__btn:hover { background: #2a4860; }
+.trip-card__btn:hover { background: #1b5e20; }
 
 /* ════════ UPCOMING SECTION ════════ */
 .upcoming-section {
@@ -459,14 +529,24 @@ nav.navbar__actions {
     font-weight: 600;
     padding: 4px 10px;
     border-radius: var(--radius-pill);
-    background: var(--color-neutral-bg);
-    color: var(--color-text-secondary);
+    background: #e0f0ff;
+    color: #1565c0;
     white-space: nowrap;
 }
 
 .upcoming-row__badge--soon {
-    background: #FEE2E2;
-    color: var(--color-soon);
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.upcoming-row__badge--urgent {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.upcoming-row__badge--departed {
+    background: var(--color-neutral-bg);
+    color: var(--color-text-secondary);
 }
 
 .upcoming-row__info {
@@ -510,7 +590,7 @@ nav.navbar__actions {
 
 .upcoming-row__btn {
     padding: 8px 20px;
-    background: var(--color-brand);
+    background: #2e7d32;
     color: var(--color-white);
     border: none;
     border-radius: var(--radius-btn);
@@ -521,17 +601,17 @@ nav.navbar__actions {
     transition: background 0.2s;
     white-space: nowrap;
 }
-.upcoming-row__btn:hover { background: #2a4860; }
+.upcoming-row__btn:hover { background: #1b5e20; }
 
 /* ════════ DESKTOP (≥768px) ════════ */
 @media (min-width: 768px) {
     :root { --navbar-height: 72px; }
 
-    .navbar { padding: 0 40px; }
+    .navbar { padding: 0 40px; justify-content: space-between; }
     .navbar__hamburger,
     .navbar__mobile-search { display: none; }
-    .navbar__left { display: flex; align-items: center; }
-    nav.navbar__actions { display: flex; }
+    .navbar__left { display: flex; align-items: center; gap: 24px; }
+    nav.navbar__actions { display: flex; align-items: center; gap: 12px; }
 
     .hero { padding: 40px 40px 48px; }
     .hero__search-row {
@@ -592,27 +672,29 @@ nav.navbar__actions {
 
 /* ════════ NAVBAR DESKTOP ACTIONS ════════ */
 .navbar__a {
-    font-family: var(--font-thai);
-    font-size: 15px;
+    font-family: var(--font-ui);
+    font-size: 14px;
     font-weight: 600;
     color: var(--color-white);
     text-decoration: none;
-    padding: 6px 4px;
-    border-bottom: 2px solid transparent;
-    transition: border-color 0.2s, opacity 0.2s;
+    padding: 7px 16px;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: var(--radius-btn);
+    background: rgba(255,255,255,0.1);
+    transition: background 0.2s, border-color 0.2s;
     white-space: nowrap;
 }
 .navbar__a:hover {
-    border-bottom-color: rgba(255,255,255,0.7);
-    opacity: 0.9;
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.7);
 }
 
 .navbar__username {
-    font-family: var(--font-thai);
+    font-family: var(--font-ui);
     font-size: 14px;
-    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
     white-space: nowrap;
-    margin: 0 4px;
 }
 
 /* Avatar circle */

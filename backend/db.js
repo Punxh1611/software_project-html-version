@@ -17,4 +17,9 @@ pool.connect((err) => {
     }
 });
 
+// ✅ ป้องกัน server crash เมื่อ connection หลุดกลางทาง
+pool.on('error', (err) => {
+    console.error('⚠️ PostgreSQL connection error:', err.message);
+});
+
 module.exports = pool;

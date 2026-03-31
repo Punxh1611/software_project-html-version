@@ -1,10 +1,7 @@
 // middleware/auth.js
-// หน้าที่: ตรวจสอบ JWT Token และ Role ก่อนเข้า route
-
 const jwt  = require('jsonwebtoken');
 const pool = require('../db');
 
-// ── ตรวจสอบว่า Login อยู่ไหม ──────────────────────────
 const verifyToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -16,15 +13,19 @@ const verifyToken = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const result = await pool.query(
-            'SELECT id, username, email, role, full_name, is_active FROM users WHERE id = $1',
+            'SELECT id, username, email, role, is_banned FROM users WHERE id = $1',
             [decoded.id]
         );
 
         if (result.rows.length === 0) {
             return res.status(401).json({ message: 'ไม่พบผู้ใช้งาน' });
         }
-        if (!result.rows[0].is_active) {
-            return res.status(401).json({ message: 'บัญชีถูกระงับการใช้งาน' });
+
+        if (result.rows[0].is_banned) {
+            return res.status(403).json({ 
+                message: 'บัญชีถูกระงับการใช้งาน',
+                banned: true
+            });
         }
 
         req.user = result.rows[0];
@@ -38,8 +39,6 @@ const verifyToken = async (req, res, next) => {
     }
 };
 
-// ── ตรวจสอบ Role ──────────────────────────────────────
-// ตัวอย่างใช้งาน: requireRole('admin') หรือ requireRole('admin','driver')
 const requireRole = (...roles) => {
     return (req, res, next) => {
         if (!req.user) {

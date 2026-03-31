@@ -49,6 +49,28 @@
         .btn-cancel-booking { width:100%; padding:14px; border:1.5px solid #ef9a9a; border-radius:var(--radius-btn); background:white; font-family:var(--font-thai); font-size:15px; font-weight:600; color:#c62828; cursor:pointer; transition:all 0.2s; margin-top:8px; }
         .btn-cancel-booking:hover { background:#ffebee; }
 
+        /* Confirm Modal */
+        .confirm-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 9999;
+            align-items: center; justify-content: center; padding: 16px;
+        }
+        .confirm-overlay.open { display: flex; }
+        .confirm-box {
+            background: white; border-radius: 16px; padding: 28px 24px;
+            max-width: 360px; width: 100%; text-align: center;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .confirm-box__icon { font-size: 40px; margin-bottom: 12px; }
+        .confirm-box__title { font-family: var(--font-thai); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .confirm-box__msg { font-family: var(--font-thai); font-size: 14px; color: #757575; margin-bottom: 24px; }
+        .confirm-box__btns { display: flex; gap: 10px; }
+        .confirm-box__btns button { flex: 1; padding: 12px; border-radius: 8px; font-family: var(--font-thai); font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn-confirm-cancel { background: #c62828; color: white; border: none; }
+        .btn-confirm-cancel:hover { background: #b71c1c; }
+        .btn-confirm-stay { background: white; color: #757575; border: 1.5px solid #d9d9d9; }
+        .btn-confirm-stay:hover { border-color: #999; }
+
         /* Success */
         .success-card { background:var(--color-white); border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:40px 24px; text-align:center; display:none; }
         .success-card__icon { font-size:64px; margin-bottom:16px; }
@@ -59,6 +81,19 @@
 </head>
 <body>
 
+    <!-- Confirm Cancel Modal -->
+    <div class="confirm-overlay" id="confirm-overlay">
+        <div class="confirm-box">
+            <div class="confirm-box__icon">⚠️</div>
+            <div class="confirm-box__title">ยืนยันการยกเลิก?</div>
+            <div class="confirm-box__msg">ที่นั่งจะถูกปล่อยคืนทันที และไม่สามารถย้อนกลับได้</div>
+            <div class="confirm-box__btns">
+                <button class="btn-confirm-stay" id="btn-stay">ไม่ยกเลิก</button>
+                <button class="btn-confirm-cancel" id="btn-confirm-cancel">ยืนยันยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
     <header class="navbar">
         <button class="navbar__hamburger" id="hamburger-btn" aria-label="เมนู">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -66,14 +101,11 @@
             </svg>
         </button>
         <span class="navbar__mobile-title">VANVAN</span>
-        <div class="navbar__left"><div class="logo"><span class="van-text">VANVAN</span></div></div>
+        <div class="navbar__left"><div class="logo"><span class="van-text">VANVAN</span></div><a class="navbar__a" href="history.html">Booking</a></div>
         <nav class="navbar__actions" id="nav-actions-desktop"></nav>
     </header>
 
     <div class="payment-container">
-
-        <!-- ✅ ปุ่ม Cancel กลับหน้าหลักโดยไม่มีอะไรใน DB -->
-        <button class="back-link" id="btn-back">← ยกเลิกและกลับหน้าหลัก</button>
 
         <!-- Payment card -->
         <div class="payment-card" id="payment-card">
@@ -177,11 +209,14 @@
             sessionStorage.removeItem("pendingBooking");
             window.location.href = "index.html";
         }
-        document.getElementById("btn-back").addEventListener("click", goBack);
         document.getElementById("btn-cancel").addEventListener("click", () => {
-            if (confirm("ยืนยันการยกเลิก?\nที่นั่งจะถูกปล่อยคืนทันที")) {
-                goBack();
-            }
+            document.getElementById("confirm-overlay").classList.add("open");
+        });
+        document.getElementById("btn-stay").addEventListener("click", () => {
+            document.getElementById("confirm-overlay").classList.remove("open");
+        });
+        document.getElementById("btn-confirm-cancel").addEventListener("click", () => {
+            goBack();
         });
 
         // ── Preview รูปสลิป ─────────────────────────────────

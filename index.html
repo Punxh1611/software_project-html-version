@@ -6,10 +6,9 @@
     <title>VANVAN</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bacasime+Antique&family=IBM+Plex+Sans+Thai:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;700;900&family=IBM+Plex+Sans+Thai:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style-main.css">
     <style>
-        /* Dropdown */
         .hero__field-input select {
             border: none;
             background: transparent;
@@ -21,25 +20,119 @@
             flex: 1;
             cursor: pointer;
             min-width: 0;
+            height: 24px;
+            padding: 0;
         }
         .hero__field-input select option { font-weight: 400; }
 
-        /* Date input — ใช้ native picker เต็มๆ ไม่มีไอคอนทับ */
-        .hero__field-input input[type="date"] {
-            border: none;
-            background: transparent;
+        /* ซ่อน icon ขวาของ datepicker wrapper */
+        .datepicker-wrapper {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+        }
+        .datepicker-input { cursor: pointer; }
+        .datepicker-input {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .datepicker-value {
             font-family: var(--font-ui);
             font-size: 15px;
             font-weight: 600;
             color: var(--color-black);
-            outline: none;
             flex: 1;
-            cursor: pointer;
-            min-width: 120px;
+            line-height: 1.5;
         }
-        .hero__field-input input[type="date"]::-webkit-calendar-picker-indicator {
+        .datepicker-value--placeholder { color: var(--color-text-tertiary); font-weight: 400; }
+        .datepicker-calendar {
+            position: fixed;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(27,79,114,0.18);
+            padding: 16px;
+            z-index: 9999;
+            width: 280px;
+            display: none;
+            border: 1.5px solid var(--color-border);
+        }
+        .datepicker-calendar.open { display: block; }
+        .datepicker-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .datepicker-nav button {
+            background: none;
+            border: none;
             cursor: pointer;
-            opacity: 0.6;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-brand);
+            font-size: 18px;
+            transition: background 0.15s;
+        }
+        .datepicker-nav button:hover { background: var(--color-bg); }
+        .datepicker-nav-title {
+            font-family: var(--font-ui);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-black);
+        }
+        .datepicker-days-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 4px;
+        }
+        .datepicker-days-header span {
+            text-align: center;
+            font-family: var(--font-ui);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            padding: 4px 0;
+        }
+        .datepicker-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        .datepicker-day {
+            text-align: center;
+            padding: 6px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-ui);
+            font-size: 13px;
+            color: var(--color-black);
+            transition: background 0.15s;
+        }
+        .datepicker-day:hover { background: var(--color-bg); }
+        .datepicker-day--today { color: var(--color-brand); font-weight: 700; }
+        .datepicker-day--selected { background: var(--color-brand); color: white !important; font-weight: 700; }
+        .datepicker-day--selected:hover { background: #1a3d56; }
+        .datepicker-day--disabled { color: var(--color-text-tertiary); cursor: default; pointer-events: none; }
+        .datepicker-day--other { color: var(--color-text-tertiary); }
+        /* Search validation */
+        @keyframes search-shake {
+            0%,100% { transform: translateX(0); }
+            20%      { transform: translateX(-6px); }
+            40%      { transform: translateX(6px); }
+            60%      { transform: translateX(-4px); }
+            80%      { transform: translateX(4px); }
+        }
+        .search-shake { animation: search-shake 0.4s ease both; }
+        .hero__field--error .hero__field-input {
+            border-color: #e53935 !important;
+            box-shadow: 0 0 0 2px rgba(229,57,53,0.15);
         }
     </style>
 </head>
@@ -74,6 +167,7 @@
         </button>
         <div class="navbar__left">
             <div class="logo"><span class="van-text">VANVAN</span></div>
+            <a class="navbar__a" href="history.html">Booking</a>
         </div>
         <nav class="navbar__actions" id="nav-actions-desktop"></nav>
     </header>
@@ -116,11 +210,31 @@
                     </div>
                 </div>
 
-                <!-- วันออกเดินทาง — native date picker ไม่มีไอคอนทับ -->
+                <!-- วันออกเดินทาง — custom date picker -->
                 <div class="hero__field">
                     <span class="hero__field-label">วันออกเดินทาง</span>
                     <div class="hero__field-input">
-                        <input type="date" id="field-date">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                        <div class="datepicker-wrapper" id="datepicker-wrapper">
+                            <div class="datepicker-input" id="datepicker-toggle">
+                                <span class="datepicker-value" id="datepicker-display">วันนี้</span>
+                            </div>
+                            <div class="datepicker-calendar" id="datepicker-calendar">
+                                <div class="datepicker-nav">
+                                    <button id="dp-prev">&#8249;</button>
+                                    <span class="datepicker-nav-title" id="dp-title"></span>
+                                    <button id="dp-next">&#8250;</button>
+                                </div>
+                                <div class="datepicker-days-header">
+                                    <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+                                </div>
+                                <div class="datepicker-grid" id="dp-grid"></div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="field-date">
                     </div>
                 </div>
 
@@ -140,13 +254,13 @@
         <!-- ผลค้นหา — แสดงเหนือ Most pickup -->
         <div id="search-results" style="display:none">
             <section class="section-card" style="margin-bottom:16px">
-                <div class="section-card__header" style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;justify-content:space-between;align-items:center">
                     <div>
-                        <h2 class="upcoming-section__title">🔍 ผลการค้นหา</h2>
+                        <h2 class="upcoming-section__title">ผลการค้นหา</h2>
                         <p class="upcoming-section__subtitle" id="search-result-count"></p>
                     </div>
                     <button id="btn-clear-search"
-                        style="background:none;border:1.5px solid var(--color-border);border-radius:8px;padding:6px 14px;font-family:var(--font-thai);font-size:13px;cursor:pointer;color:var(--color-text-secondary)">
+                        style="background:none;border:1.5px solid var(--color-border);border-radius:8px;padding:6px 14px;font-family:var(--font-thai);font-size:13px;cursor:pointer;color:var(--color-text-secondary);white-space:nowrap">
                         ✕ ล้างการค้นหา
                     </button>
                 </div>
@@ -155,32 +269,59 @@
         </div>
 
         <section class="section-card">
-            <div class="section-card__header">
-                <h2 class="section-card__title">Most pickup</h2>
-                <p class="section-card__subtitle">เส้นทางยอดนิยม</p>
+            <!-- Tab Header -->
+            <div style="display:flex;gap:8px;border-bottom:2px solid var(--color-border);padding-bottom:0;margin-bottom:4px">
+                <button class="tab-btn tab-btn--active" id="tab-pickup" onclick="switchTab('pickup')">
+                    Most pickup
+                </button>
+                <button class="tab-btn" id="tab-upcoming" onclick="switchTab('upcoming')">
+                    รอบที่ใกล้ออก
+                </button>
             </div>
 
-            <div class="trip-grid" id="trip-grid">
-                <div class="trip-card">
-                    <div class="trip-card__img-placeholder"></div>
-                    <div class="trip-card__body">
-                        <h3 class="trip-card__name" style="color:var(--color-text-tertiary)">กำลังโหลด...</h3>
+            <!-- Tab: Most pickup -->
+            <div id="panel-pickup">
+                <p style="font-family:var(--font-thai);font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">เส้นทางยอดนิยม</p>
+                <div class="trip-grid" id="trip-grid">
+                    <div class="trip-card">
+                        <div class="trip-card__img-placeholder"></div>
+                        <div class="trip-card__body">
+                            <h3 class="trip-card__name" style="color:var(--color-text-tertiary)">กำลังโหลด...</h3>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <section class="upcoming-section">
-                <div class="upcoming-section__header">
-                    <h2 class="upcoming-section__title">รอบที่ใกล้ออก</h2>
-                    <p class="upcoming-section__subtitle">รอบเดินทางที่กำลังจะออกเร็วๆ นี้</p>
-                </div>
+            <!-- Tab: รอบใกล้ออก -->
+            <div id="panel-upcoming" style="display:none">
+                <p style="font-family:var(--font-thai);font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">รอบเดินทางที่กำลังจะออกเร็วๆ นี้</p>
                 <div class="upcoming-list" id="upcoming-list">
                     <p style="font-family:var(--font-thai);color:var(--color-text-secondary);padding:16px 0">กำลังโหลด...</p>
                 </div>
-            </section>
+            </div>
         </section>
     </main>
 
+    <script>
+        function switchTab(tab) {
+            const pickup   = document.getElementById("panel-pickup");
+            const upcoming = document.getElementById("panel-upcoming");
+            const btnPickup   = document.getElementById("tab-pickup");
+            const btnUpcoming = document.getElementById("tab-upcoming");
+
+            if (tab === "pickup") {
+                pickup.style.display   = "block";
+                upcoming.style.display = "none";
+                btnPickup.classList.add("tab-btn--active");
+                btnUpcoming.classList.remove("tab-btn--active");
+            } else {
+                pickup.style.display   = "none";
+                upcoming.style.display = "block";
+                btnPickup.classList.remove("tab-btn--active");
+                btnUpcoming.classList.add("tab-btn--active");
+            }
+        }
+    </script>
     <script type="module" src="main.js"></script>
 </body>
 </html>

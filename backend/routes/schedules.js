@@ -1,15 +1,10 @@
 // routes/schedules.js
-// หน้าที่: จัดการรอบรถ
-// - ทุกคนดูได้: ค้นหารอบรถ
-// - Admin เท่านั้น: สร้างรอบ, กำหนดคนขับ
-
 const express                    = require('express');
 const router                     = express.Router();
 const pool                       = require('../db');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
 // ── GET /api/schedules ─────────────────────────────────
-// ทุกคนดูได้ ค้นหารอบรถตาม origin, destination, date
 router.get('/', async (req, res) => {
     try {
         const { origin, destination, date } = req.query;
@@ -23,15 +18,18 @@ router.get('/', async (req, res) => {
                 s.status,
                 r.origin,
                 r.destination,
+                r.destination_en,
                 r.price,
-                u.full_name AS driver_name,
-                d.plate_number
+                r.estimated_hours,
+                d.full_name AS driver_name,
+                v.plate_number
             FROM van_schedules s
             JOIN routes r ON r.id = s.route_id
             LEFT JOIN drivers d ON d.id = s.driver_id
-            LEFT JOIN users u ON u.id = d.user_id
+            LEFT JOIN vans v ON v.id = s.van_id
             WHERE s.status = 'available'
             AND s.depart_time > NOW()
+            AND s.depart_time <= NOW() + INTERVAL '7 days'
             AND s.driver_id IS NOT NULL
         `;
 
@@ -63,7 +61,6 @@ router.get('/', async (req, res) => {
 });
 
 // ── GET /api/schedules/:id ────────────────────────────
-// ดูรายละเอียดรอบใดรอบหนึ่ง
 router.get('/:id', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -71,13 +68,15 @@ router.get('/:id', async (req, res) => {
                 s.*,
                 r.origin,
                 r.destination,
+                r.destination_en,
                 r.price,
-                u.full_name AS driver_name,
-                d.plate_number
+                r.estimated_hours,
+                d.full_name AS driver_name,
+                v.plate_number
             FROM van_schedules s
             JOIN routes r ON r.id = s.route_id
             LEFT JOIN drivers d ON d.id = s.driver_id
-            LEFT JOIN users u ON u.id = d.user_id
+            LEFT JOIN vans v ON v.id = s.van_id
             WHERE s.id = $1
         `, [req.params.id]);
 
@@ -93,7 +92,6 @@ router.get('/:id', async (req, res) => {
 });
 
 // ── POST /api/schedules ───────────────────────────────
-// Admin สร้างรอบรถใหม่
 router.post('/', verifyToken, requireRole('admin'), async (req, res) => {
     try {
         const { route_id, driver_id, depart_time, total_seats } = req.body;
@@ -102,7 +100,6 @@ router.post('/', verifyToken, requireRole('admin'), async (req, res) => {
             return res.status(400).json({ message: 'กรุณากรอกข้อมูลให้ครบ (เส้นทาง, วันเวลา)' });
         }
 
-        // ตรวจว่าเส้นทางมีอยู่จริง
         const routeCheck = await pool.query(
             'SELECT id, price FROM routes WHERE id = $1 AND is_active = true',
             [route_id]
@@ -133,7 +130,6 @@ router.post('/', verifyToken, requireRole('admin'), async (req, res) => {
 });
 
 // ── PATCH /api/schedules/:id/driver ──────────────────
-// Admin กำหนดคนขับ
 router.patch('/:id/driver', verifyToken, requireRole('admin'), async (req, res) => {
     try {
         const { driver_id } = req.body;
@@ -141,7 +137,6 @@ router.patch('/:id/driver', verifyToken, requireRole('admin'), async (req, res) 
             return res.status(400).json({ message: 'กรุณาระบุ driver_id' });
         }
 
-        // ตรวจว่าคนขับมีอยู่จริง
         const driverCheck = await pool.query(
             'SELECT id FROM drivers WHERE id = $1',
             [driver_id]

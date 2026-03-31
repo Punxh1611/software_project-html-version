@@ -27,6 +27,9 @@ app.use('/api/schedules', require('./routes/schedules'));
 app.use('/api/bookings',  require('./routes/bookings'));
 app.use('/api/admin',     require('./routes/admin'));
 
+// ── เสิร์ฟไฟล์ Frontend ───────────────────────────────
+app.use(express.static(path.join(__dirname, '..')));
+
 // ── Health Check ──────────────────────────────────────
 app.get('/', (req, res) => {
     res.json({ 

@@ -147,12 +147,12 @@ async function doRegister() {
         const data = await res.json();
 
         if (!res.ok) {
-            if (data.message.includes("Username")) {
-                setError("reg-username", "⚠ " + data.message);
-            } else if (data.message.includes("Email")) {
+            if (data.field === 'email' || data.message?.includes("Email")) {
                 setError("reg-email", "⚠ " + data.message);
+                toast(data.message, "warning");
+            } else {
+                toast(data.message, "error");
             }
-            toast(data.message, "error");
             shakeCard();
             return;
         }
