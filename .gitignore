@@ -3,3 +3,4 @@ node_modules/
 .env
 git rm --cached api/serviceAccountKey.json
 admin/script.js
+backend/package-lock.json

@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <script src="../auth-guard.js" data-role="admin"></script>
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VanGo Admin - Mochit Connect</title>
   <link rel="stylesheet" href="style.css">
-  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -23,7 +25,7 @@
       <nav id="sidebar-nav" class="sidebar-nav"></nav>
       
       <div class="sidebar-footer">
-        <button class="btn-logout">
+        <button class="btn-logout" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.replace('../login.html');">
           <i data-lucide="log-out"></i>
           <span>Logout</span>
         </button>

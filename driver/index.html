@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <script src="../auth-guard.js" data-role="driver"></script>
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Van Driver App</title>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -14,6 +13,7 @@
   </head>
   <body>
     <div class="mobile-container">
+
       <!-- Header -->
       <header id="main-header">
         <div class="header-left">
@@ -22,39 +22,51 @@
           </button>
           <h1 id="header-title">หน้าแรก</h1>
         </div>
-        <button class="notification-btn">
+        <button class="notification-btn" id="notification-btn">
           <i data-lucide="bell"></i>
-          <span class="badge">2</span>
+          <span class="badge" id="notification-badge" style="display:none">0</span>
         </button>
       </header>
 
+      <!-- Notification Panel -->
+      <div id="notification-panel">
+        <div class="notif-header">
+          <span>การแจ้งเตือน</span>
+          <button id="notif-clear-btn">ล้างทั้งหมด</button>
+        </div>
+        <div id="notif-list">
+          <div class="notif-empty">ยังไม่มีการแจ้งเตือน</div>
+        </div>
+      </div>
+      <div id="notif-overlay"></div>
+
       <!-- Main Content -->
       <main id="main-content">
+
         <!-- Home Page -->
         <div id="home-page" class="page active">
           <div class="welcome-section">
-            <div class="avatar">W</div>
+            <div class="avatar" id="profile-avatar">?</div>
             <div class="welcome-text">
-              <p>สวัสดีตอนเช้า,</p>
-              <h2>คุณวิชัย (คนขับ)</h2>
+              <p>Hello,</p>
+              <h2 id="profile-name">กำลังโหลด...</h2>
             </div>
           </div>
           <div id="next-trip-container"></div>
           <div class="stats-grid">
             <div class="card stat-card dark" style="margin-bottom:0">
               <p>งานวันนี้</p>
-              <p>2 เที่ยว</p>
+              <p id="stat-today-trips">-</p>
             </div>
             <div class="card stat-card" style="margin-bottom:0">
-              <p>ผู้โดยสารรวม</p>
-              <p>12 คน</p>
+              <p>ผู้โดยสารวันนี้</p>
+              <p id="stat-total-passengers">-</p>
             </div>
           </div>
         </div>
 
-        <!-- Schedule Page -->
+        <!-- Schedule/History Page -->
         <div id="schedule-page" class="page">
-          <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">ตารางวิ่งวันนี้</h2>
           <div id="schedule-list"></div>
         </div>
 
@@ -75,39 +87,29 @@
 
         <!-- Profile Page -->
         <div id="profile-page" class="page">
-          <div class="card" style="display:flex;flex-direction:column;align-items:center;padding:32px 20px;">
-            <div class="avatar" style="width:96px;height:96px;font-size:36px;margin-bottom:16px;">W</div>
-            <h2 style="font-size:20px;font-weight:700;">คุณวิชัย รักงาน</h2>
-            <p style="color:var(--color-text-soft);font-size:14px;margin-bottom:24px;">พนักงานขับรถ (ID: DRV-882)</p>
-            <div style="display:flex;gap:12px;width:100%;">
-              <div style="flex:1;background-color:var(--color-bg-main);padding:12px;border-radius:16px;text-align:center;">
-                <p style="font-size:10px;font-weight:700;color:var(--color-text-soft);text-transform:uppercase;">คะแนน</p>
-                <p style="font-size:18px;font-weight:700;color:var(--color-blue-dark);">4.9/5.0</p>
+          <div class="card profile-card">
+            <div class="avatar profile-avatar-big" id="profile-avatar-big">?</div>
+            <h2 class="profile-fullname" id="profile-fullname">กำลังโหลด...</h2>
+            <p class="profile-email" id="profile-email">-</p>
+            <p class="profile-license" id="profile-license">ใบขับขี่: -</p>
+            <div class="profile-stats">
+              <div class="profile-stat-box">
+                <p class="profile-stat-label">เบอร์โทร</p>
+                <p class="profile-stat-value" id="profile-phone">-</p>
               </div>
-              <div style="flex:1;background-color:var(--color-bg-main);padding:12px;border-radius:16px;text-align:center;">
-                <p style="font-size:10px;font-weight:700;color:var(--color-text-soft);text-transform:uppercase;">อายุงาน</p>
-                <p style="font-size:18px;font-weight:700;color:var(--color-blue-dark);">2 ปี</p>
+              <div class="profile-stat-box">
+                <p class="profile-stat-label">งานที่สำเร็จทั้งหมด</p>
+                <p class="profile-stat-value" id="profile-total-trips">-</p>
               </div>
             </div>
           </div>
-          <div class="profile-menu-item">
-            <div class="profile-menu-left">
-              <i data-lucide="truck" style="color:var(--color-blue-mid);"></i>
-              <span style="font-weight:500;">ข้อมูลรถตู้</span>
-            </div>
-            <i data-lucide="chevron-right" style="color:var(--color-text-soft);"></i>
-          </div>
-          <div class="profile-menu-item">
-            <div class="profile-menu-left">
-              <i data-lucide="calendar" style="color:var(--color-blue-mid);"></i>
-              <span style="font-weight:500;">ประวัติการวิ่ง</span>
-            </div>
-            <i data-lucide="chevron-right" style="color:var(--color-text-soft);"></i>
-          </div>
-          <button style="width:100%;padding:20px;color:#ff4444;font-weight:700;background:none;border:none;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;">
-            <i data-lucide="log-out"></i> ออกจากระบบ
+
+          <button id="btn-logout" class="btn-logout-profile">
+            <i data-lucide="log-out"></i>
+            <span>ออกจากระบบ</span>
           </button>
         </div>
+
       </main>
 
       <!-- Detail View -->
@@ -132,8 +134,8 @@
           <span>หน้าแรก</span>
         </button>
         <button class="nav-item" data-tab="schedule">
-          <i data-lucide="calendar"></i>
-          <span>ตารางวิ่ง</span>
+          <i data-lucide="history"></i>
+          <span>ประวัติ</span>
         </button>
         <button class="nav-item" data-tab="scan">
           <i data-lucide="qr-code"></i>

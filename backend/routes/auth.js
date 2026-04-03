@@ -24,7 +24,7 @@ router.post('/register', async (req, res) => {
             [username, email]
         );
         if (exist.rows.length > 0) {
-            return res.status(409).json({ message: 'Username หรือ Email นี้ถูกใช้ไปแล้ว' });
+            return res.status(409).json({ message: 'Email นี้ถูกใช้ไปแล้ว' });
         }
 
         const hashed = await bcrypt.hash(password, 10);
@@ -65,7 +65,7 @@ router.post('/login', async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(401).json({ message: 'ไม่พบ Username หรือ Email นี้ในระบบ' });
+            return res.status(401).json({ message: 'ไม่พบ Email นี้ในระบบ' });
         }
 
         const user  = result.rows[0];
@@ -100,40 +100,41 @@ router.post('/login', async (req, res) => {
 
 // ─────────────────────────────────────────
 // POST /api/auth/forgot-password
-// ตรวจสอบว่า username + email ตรงกันในระบบ
+// ค้นหาบัญชีจาก Email เท่านั้น
 // ─────────────────────────────────────────
 router.post('/forgot-password', async (req, res) => {
-    const { username, email } = req.body;
-    if (!username || !email) {
-        return res.status(400).json({ message: 'กรุณากรอก Username และ Email' });
+    const { email } = req.body;
+    
+    // เช็คว่าส่ง Email มาไหม
+    if (!email) {
+        return res.status(400).json({ message: 'กรุณากรอก Email' });
     }
+
     try {
-        // ตรวจ username ก่อน
+        // ค้นหาในฐานข้อมูลด้วย Email
         const userResult = await pool.query(
-            'SELECT id, email FROM users WHERE username = $1',
-            [username]
+            'SELECT id FROM users WHERE email = $1',
+            [email]
         );
+
+        // ถ้าไม่เจอ Email นี้
         if (userResult.rows.length === 0) {
             return res.status(404).json({
-                message: 'ไม่พบ Username นี้ในระบบ',
-                field: 'username'   // ← บอก frontend ว่าผิดตรงไหน
+                message: 'ไม่พบ Email นี้ในระบบ',
+                field: 'email'
             });
         }
-        // ตรวจ email
-        if (userResult.rows[0].email !== email) {
-            return res.status(404).json({
-                message: 'Email ไม่ตรงกับบัญชีนี้',
-                field: 'email'      // ← บอก frontend ว่าผิดตรงไหน
-            });
-        }
+
+        // ถ้าเจอ ส่ง user_id กลับไปให้ตั้งรหัสใหม่
         res.json({
             success: true,
             message: 'พบบัญชีแล้ว กรุณาตั้งรหัสผ่านใหม่',
             user_id: userResult.rows[0].id
         });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'เกิดข้อผิดพลาด' });
+        console.error('Forgot password error:', err);
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล' });
     }
 });
 

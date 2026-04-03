@@ -1,4 +1,4 @@
-// routes/driver.js
+// driver/backend/routes/driver.js
 const express = require('express');
 const router  = express.Router();
 const pool    = require('../db');
@@ -6,9 +6,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 
 // ── GET /api/driver/profile ───────────────────────────────
 router.get('/profile', verifyToken, requireRole('driver'), async (req, res) => {
-    //console.log(">>> profile req.user.id:", req.user.id);
     try {
-        // ── ดึงข้อมูลพื้นฐานของ driver ──
         const driverResult = await pool.query(`
             SELECT d.id, d.full_name, d.phone, d.license_no,
                    u.username, u.email
@@ -17,25 +15,21 @@ router.get('/profile', verifyToken, requireRole('driver'), async (req, res) => {
             WHERE d.user_id = $1
         `, [req.user.id]);
 
-        //console.log(">>> driver rows:", driverResult.rows.length);
-
         if (driverResult.rows.length === 0) {
             return res.status(404).json({ message: 'ไม่พบข้อมูลคนขับ' });
         }
 
         const driver = driverResult.rows[0];
-
-        // ── ดึง stats แยก (ไม่กระทบ profile ถ้า fail) ──
         let trips_today = 0, passengers_today = 0, total_trips = 0, plate_number = null;
 
         try {
             const statsResult = await pool.query(`
                 SELECT
-                    COUNT(CASE WHEN s.status = 'completed' THEN 1 END)                           AS total_trips,
-                    COUNT(CASE WHEN DATE(s.depart_time) = CURRENT_DATE THEN 1 END)                AS trips_today,
+                    COUNT(CASE WHEN s.status = 'completed' THEN 1 END)                        AS total_trips,
+                    COUNT(CASE WHEN DATE(s.depart_time) = CURRENT_DATE THEN 1 END)             AS trips_today,
                     COALESCE(SUM(CASE WHEN DATE(s.depart_time) = CURRENT_DATE
-                        THEN s.total_seats - s.available_seats END), 0)                           AS passengers_today,
-                    MAX(v.plate_number)                                                           AS plate_number
+                        THEN s.total_seats - s.available_seats END), 0)                        AS passengers_today,
+                    MAX(v.plate_number)                                                        AS plate_number
                 FROM van_schedules s
                 LEFT JOIN vans v ON v.id = s.van_id
                 WHERE s.driver_id = $1
@@ -48,20 +42,10 @@ router.get('/profile', verifyToken, requireRole('driver'), async (req, res) => {
                 plate_number     = statsResult.rows[0].plate_number     || null;
             }
         } catch (statsErr) {
-            console.error("stats query error (non-fatal):", statsErr.message);
+            console.error("stats error:", statsErr.message);
         }
 
-        res.json({
-            success: true,
-            data: {
-                ...driver,
-                trips_today,
-                passengers_today,
-                total_trips,
-                plate_number
-            }
-        });
-
+        res.json({ success: true, data: { ...driver, trips_today, passengers_today, total_trips, plate_number } });
     } catch (err) {
         console.error("profile error:", err);
         res.status(500).json({ message: 'เกิดข้อผิดพลาด: ' + err.message });
@@ -71,24 +55,20 @@ router.get('/profile', verifyToken, requireRole('driver'), async (req, res) => {
 // ── GET /api/driver/schedules ─────────────────────────────
 router.get('/schedules', verifyToken, requireRole('driver'), async (req, res) => {
     try {
+        const { date } = req.query;
+        const dateFilter = date === 'today'
+            ? `AND DATE(s.depart_time) = CURRENT_DATE`
+            : `AND DATE(s.depart_time) >= CURRENT_DATE - INTERVAL '90 days'`;
+
         const result = await pool.query(`
-            SELECT 
-                s.id,
-                s.depart_time,
-                s.total_seats,
-                s.available_seats,
-                s.status,
-                r.origin,
-                r.destination,
-                r.price,
-                v.plate_number
+            SELECT s.id, s.depart_time, s.total_seats, s.available_seats,
+                   s.status, r.origin, r.destination, r.price, v.plate_number
             FROM van_schedules s
             JOIN routes r ON r.id = s.route_id
             LEFT JOIN vans v ON v.id = s.van_id
             LEFT JOIN drivers d ON d.id = s.driver_id
-            WHERE d.user_id = $1
-            AND DATE(s.depart_time) >= CURRENT_DATE
-            ORDER BY s.depart_time ASC
+            WHERE d.user_id = $1 ${dateFilter}
+            ORDER BY s.depart_time DESC
         `, [req.user.id]);
 
         res.json({ success: true, data: result.rows });
@@ -99,18 +79,14 @@ router.get('/schedules', verifyToken, requireRole('driver'), async (req, res) =>
 });
 
 // ── GET /api/driver/schedules/:id/passengers ──────────────
+// (คนที่ยืนยันแล้ว - สีเขียว)
 router.get('/schedules/:id/passengers', verifyToken, requireRole('driver'), async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT 
-                b.id,
-                b.ticket_code,
-                b.status,
-                u.username AS passenger_name
+            SELECT b.id, b.ticket_code, b.status, COALESCE(u.full_name, u.username) AS passenger_name
             FROM bookings b
             JOIN users u ON u.id = b.user_id
-            WHERE b.schedule_id = $1
-            AND b.status = 'confirmed'
+            WHERE b.schedule_id = $1 AND b.status = 'confirmed'
             ORDER BY b.id ASC
         `, [req.params.id]);
 
@@ -120,11 +96,13 @@ router.get('/schedules/:id/passengers', verifyToken, requireRole('driver'), asyn
         res.status(500).json({ message: 'เกิดข้อผิดพลาด' });
     }
 });
+
 // ── GET /api/driver/schedules/:id/pending ─────────────────
+// (คนที่รอแอดมินยืนยัน - สีเหลือง)
 router.get('/schedules/:id/pending', verifyToken, requireRole('driver'), async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT b.id, b.status, u.username AS passenger_name
+            SELECT b.id, b.status, COALESCE(u.full_name, u.username) AS passenger_name
             FROM bookings b
             JOIN users u ON u.id = b.user_id
             WHERE b.schedule_id = $1
@@ -149,6 +127,24 @@ router.patch('/schedules/:id/status', verifyToken, requireRole('driver'), async 
     }
 
     try {
+        if (status === 'traveling') {
+            const scheduleRes = await pool.query(
+                `SELECT depart_time FROM van_schedules WHERE id = $1`,
+                [req.params.id]
+            );
+            if (scheduleRes.rows.length > 0) {
+                const depart  = new Date(scheduleRes.rows[0].depart_time);
+                const now     = new Date();
+                const diffMin = (depart - now) / 60000;
+
+                if (diffMin > 15) {
+                    return res.status(400).json({
+                        message: `ยังออกรถไม่ได้ เหลืออีก ${Math.round(diffMin)} นาที (ออกได้เมื่อเหลือไม่เกิน 15 นาที)`
+                    });
+                }
+            }
+        }
+
         const result = await pool.query(`
             UPDATE van_schedules s
             SET status = $1
@@ -180,7 +176,7 @@ router.post('/verify-ticket', verifyToken, requireRole('driver'), async (req, re
 
     try {
         const result = await pool.query(`
-            SELECT b.id, b.ticket_code, b.status, u.username AS passenger_name
+            SELECT b.id, b.ticket_code, b.status, COALESCE(u.full_name, u.username) AS passenger_name
             FROM bookings b
             JOIN users u ON u.id = b.user_id
             WHERE b.ticket_code = $1 AND b.schedule_id = $2
