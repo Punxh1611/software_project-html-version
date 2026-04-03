@@ -29,7 +29,7 @@ function formatDate(dateStr) {
 }
 
 function seatsBadge(available) {
-    if (available === 0)  return `<span class="seats-badge seats-badge--full">เต็มแล้ว</span>`;
+    if (available === 0)  return `<span class="seats-badge seats-badge--cancelled">เต็มแล้ว</span>`;
     if (available <= 3)   return `<span class="seats-badge seats-badge--low">เหลือ ${available} ที่นั่ง</span>`;
     return `<span class="seats-badge">เหลือ ${available} ที่นั่ง</span>`;
 }
@@ -75,14 +75,45 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        // แสดงข้อมูล
+        // ==========================================
+        // ✅ ระบบเช็คราคา: อัปเดตจาก van_schedules ก่อน -> ถ้าไม่มีใช้จาก routes
+        // ==========================================
+        let finalPrice = 0;
+
+        // 1. ลองดึงราคาจาก van_schedules (ถ้ามีและไม่เป็น null/undefined)
+        if (s.van_schedules && s.van_schedules.price !== null && s.van_schedules.price !== undefined) {
+            finalPrice = s.van_schedules.price;
+        } 
+        else if (s.price !== null && s.price !== undefined) {
+             // กรณีที่ API ดึง van_schedules มาไว้ที่ root level แล้ว
+            finalPrice = s.price;
+        }
+        // 2. ถ้าข้างบนไม่ได้ค่า ให้ดึงราคา default จาก routes (ถ้า API มีการ Join มาให้)
+        else if (s.routes && s.routes.price !== null && s.routes.price !== undefined) {
+             finalPrice = s.routes.price;
+        }
+
+        // กรณีฉุกเฉิน: ถ้าไม่ได้ราคาเลย (กันเหนียว)
+        if (finalPrice === 0) {
+            console.warn("ไม่พบข้อมูลราคาจากทั้ง van_schedules และ routes");
+        }
+        // ==========================================
+
         const user = getUser();
-        document.getElementById("info-origin").textContent      = s.origin;
-        document.getElementById("info-destination").textContent = s.destination;
+        
+        // เช็คที่อยู่ปลายทาง/ต้นทาง เผื่อ API ส่งมาแบบ Join (s.routes.origin)
+        const originName = s.origin || (s.routes && s.routes.origin) || "-";
+        const destName = s.destination || (s.routes && s.routes.destination) || "-";
+
+        document.getElementById("info-origin").textContent      = originName;
+        document.getElementById("info-destination").textContent = destName;
         document.getElementById("info-depart").textContent      = formatDate(s.depart_time);
         document.getElementById("info-driver").textContent      = s.driver_name  || "-";
         document.getElementById("info-plate").textContent       = s.plate_number || "-";
-        document.getElementById("info-price").textContent       = `฿${Number(s.price).toLocaleString()}`;
+        
+        // ✅ นำตัวแปรราคาที่คำนวณแล้วมาแสดงผล
+        document.getElementById("info-price").textContent       = `฿${Number(finalPrice).toLocaleString()}`;
+        
         document.getElementById("info-seats").innerHTML         = seatsBadge(s.available_seats);
         document.getElementById("info-passenger").textContent   = user?.username || "-";
 
@@ -90,14 +121,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         contentEl.style.display = "block";
 
         // ✅ กดยืนยัน → ส่งข้อมูลผ่าน sessionStorage ไปหน้า payment
-        // ไม่แตะ DB เลย
         document.getElementById("btn-confirm").addEventListener("click", () => {
             sessionStorage.setItem("pendingBooking", JSON.stringify({
                 schedule_id:  s.id,
-                origin:       s.origin,
-                destination:  s.destination,
+                origin:       originName,
+                destination:  destName,
                 depart_time:  s.depart_time,
-                price:        s.price,
+                
+                // ✅ ส่งราคาสุดท้าย (Final Price) ไปหน้าชำระเงิน
+                price:        finalPrice, 
+                
                 driver_name:  s.driver_name,
                 plate_number: s.plate_number,
             }));
@@ -105,7 +138,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Booking load error:", err);
         loadingEl.style.display = "none";
         errorEl.style.display   = "block";
     }
